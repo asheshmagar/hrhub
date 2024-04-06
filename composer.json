@@ -1,0 +1,32 @@
+{
+  "name": "ashesh/hrhub",
+  "autoload": {
+    "files": [
+      "src/Helpers/dashboard.php"
+    ],
+    "psr-4": {
+      "HRHub\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "asheshmagar",
+      "email": "asheshmagar8888667@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "php-di/php-di": "^6.4",
+    "doctrine/orm": "^2.19",
+    "doctrine/dbal": "^3.8",
+    "symfony/cache": "^5.4",
+    "doctrine/migrations": "^3.5",
+    "jms/serializer": "^3.30"
+  },
+  "require-dev": {
+    "symfony/maker-bundle": "^1.43"
+  },
+  "scripts": {
+    "migration:generate": "vendor\\bin\\doctrine-migrations.bat generate --configuration configs\\migrations.php"
+  }
+}
