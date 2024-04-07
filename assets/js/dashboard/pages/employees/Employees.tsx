@@ -76,8 +76,8 @@ export const Employees = () => {
 						employeesQuery.data?.employees.map((e) => ({
 							id: e.id,
 							name: e.name,
-							department: e.department ?? '(Unassigned)',
-							position: e.position ?? '(Unassigned)',
+							department: e.department?.name ?? '(Unassigned)',
+							position: e.position?.name ?? '(Unassigned)',
 							phone_number: e.phone_number,
 							status: e.status,
 						})) ?? []
