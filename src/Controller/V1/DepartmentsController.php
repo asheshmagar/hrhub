@@ -118,6 +118,14 @@ class DepartmentsController extends \WP_REST_Controller {
 	 */
 	public function create_item( $request ) {
 		$data = $request->get_params();
+		$name = $data['name'];
+		if ( $this->entity_service->em->getRepository( Department::class )->findBy(
+			[
+				'name' => $name,
+			]
+		) ) {
+			return new \WP_Error( 'department_exists', 'Department already exists.', [ 'status' => 400 ] );
+		}
 		$item = $this->entity_service->create( $data );
 		if ( is_wp_error( $item ) ) {
 			return $item;
