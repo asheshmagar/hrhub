@@ -12,8 +12,10 @@ use HRHub\Entity\Leave;
 use Doctrine\ORM\Events;
 use HRHub\Entity\Review;
 use Doctrine\ORM\ORMSetup;
+use HRHub\Entity\Document;
 use HRHub\Entity\Employee;
 use HRHub\Entity\Position;
+use HRHub\Entity\Attachment;
 use HRHub\Entity\Attendance;
 use HRHub\Entity\Department;
 use JMS\Serializer\Serializer;
@@ -21,8 +23,7 @@ use Doctrine\ORM\EntityManager;
 use HRHub\Service\LeaveService;
 use HRHub\Service\ReviewService;
 use Doctrine\Common\EventManager;
-use Doctrine\ORM\Configuration;
-use Doctrine\ORM\Mapping\Driver\AttributeDriver;
+use HRHub\Service\DocumentService;
 use HRHub\Service\EmployeeService;
 use HRHub\Service\PositionService;
 use HRHub\AssetManager\AssetManager;
@@ -36,8 +37,6 @@ use HRHub\Controller\V1\EmployeesController;
 use HRHub\Controller\V1\PositionsController;
 use HRHub\Controller\V1\AttendancesController;
 use HRHub\Controller\V1\DepartmentsController;
-use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Cache\Adapter\PhpFilesAdapter;
 
 use function DI\get;
 use function DI\create;
@@ -101,7 +100,7 @@ return [
 	AttendancesController::class => create( AttendancesController::class )->constructor( get( AttendanceService::class ) ),
 	DepartmentsController::class => create( DepartmentsController::class )->constructor( get( DepartmentService::class ), get( Serializer::class ) ),
 	LeavesController::class      => create( LeavesController::class )->constructor( get( LeaveService::class ) ),
-	PositionsController::class   => create( PositionsController::class )->constructor( get( PositionService::class ) ),
+	PositionsController::class   => create( PositionsController::class )->constructor( get( PositionService::class ), get( Serializer::class ) ),
 	ReviewsController::class     => create( ReviewsController::class )->constructor( get( ReviewService::class ) ),
 	RESTApi::class               => create( RESTApi::class )->constructor(
 		get( EmployeesController::class ),
