@@ -1,6 +1,8 @@
+import { DevTool } from '@hookform/devtools';
 import { useQuery } from '@tanstack/react-query';
+import { MediaUpload } from '@wordpress/media-utils';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Eye, FileIcon, Image, Plus, X } from 'lucide-react';
 import React from 'react';
 import { FormProvider, UseFormReturn } from 'react-hook-form';
 import { Button } from '../../../../@/components/ui/button';
@@ -31,6 +33,7 @@ import {
 import { Api } from '../../../../@/lib/api';
 import { cn } from '../../../../@/lib/utils';
 import {
+	AttachmentSchema,
 	DepartmentSchema,
 	EmployeeSchema,
 	PositionSchema,
@@ -41,6 +44,7 @@ type Props = {
 	onSubmit: (data: EmployeeSchema) => void;
 	isLoading?: boolean;
 	submitBtnText: string;
+	isEdit?: boolean;
 };
 
 export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
@@ -75,10 +79,12 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 		value: d.id,
 		label: d.name,
 	}));
+
 	const positionOptions = positionsQuery.data?.positions.map((d) => ({
 		value: d.id,
 		label: d.name,
 	}));
+
 	return (
 		<FormProvider {...form}>
 			<ReactForm {...form}>
@@ -133,7 +139,11 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 							<FormItem>
 								<FormLabel>Phone number</FormLabel>
 								<FormControl>
-									<PhoneInput defaultCountry="NP" {...field} />
+									<PhoneInput
+										placeholder="980-0000000"
+										defaultCountry="NP"
+										{...field}
+									/>
 								</FormControl>
 								{form.formState.errors.phone_number && (
 									<FormMessage>
@@ -245,7 +255,7 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 							<FormItem>
 								<FormLabel>Address</FormLabel>
 								<FormControl>
-									<Input {...field} />
+									<Input placeholder="Enter address" {...field} />
 								</FormControl>
 								{form.formState.errors.address && (
 									<FormMessage>
@@ -294,12 +304,11 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 									<ReactSelect
 										createAble={false}
 										options={departmentOptions ?? []}
-										defaultValue={departmentOptions?.find(
+										value={departmentOptions?.find(
 											(d) => d.value === field.value,
 										)}
 										isLoading={departmentsQuery.isLoading}
 										placeholder="Select department"
-										onInputChange={(v) => {}}
 										onChange={(v) => field.onChange(v?.value ?? undefined)}
 									/>
 								</FormControl>
@@ -321,12 +330,11 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 									<ReactSelect
 										createAble={false}
 										options={positionOptions ?? []}
-										defaultValue={positionOptions?.find(
+										value={positionOptions?.find(
 											(d) => d.value === field.value,
 										)}
 										isLoading={positionsQuery.isLoading}
 										placeholder="Select position"
-										onInputChange={(v) => {}}
 										onChange={(v) => field.onChange(v?.value ?? undefined)}
 									/>
 								</FormControl>
@@ -338,6 +346,156 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 							</FormItem>
 						)}
 					/>
+					<FormField
+						control={form.control}
+						name="salary"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Salary</FormLabel>
+								<FormControl>
+									<Input placeholder="00.00" type="number" {...field} />
+								</FormControl>
+								{form.formState.errors.salary && (
+									<FormMessage>
+										{form.formState.errors.salary.message}
+									</FormMessage>
+								)}
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="employment_type"
+						rules={{
+							required: true,
+						}}
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Employment type</FormLabel>
+								<FormControl>
+									<Select onValueChange={field.onChange} value={field.value}>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Select employment type" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="full-time">Full time</SelectItem>
+											<SelectItem value="part-time">Part time</SelectItem>
+											<SelectItem value="trainee/intern">
+												Trainee / Intern
+											</SelectItem>
+											<SelectItem value="contractor/freelancer">
+												Contractor / Freelancer
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormControl>
+								{form.formState.errors.employment_type && (
+									<FormMessage>
+										{form.formState.errors.employment_type.message}
+									</FormMessage>
+								)}
+							</FormItem>
+						)}
+					/>
+					<div className="col-span-1 sm:col-span-2 md:col-span-3">
+						<FormField
+							control={form.control}
+							name="documents"
+							render={({ field }) => (
+								<FormItem className="space-y-4">
+									<FormLabel>Documents</FormLabel>
+									<FormControl>
+										<>
+											<MediaUpload
+												value={field.value?.map((v) => v.id)}
+												render={({ open }) => {
+													return (
+														<div>
+															<Button variant="outline" onClick={open}>
+																<Plus className="w-4 h-4" />
+																Add
+															</Button>
+														</div>
+													);
+												}}
+												onSelect={(attachments: AttachmentSchema[]) => {
+													const nextValue = field.value ?? [];
+													for (const attachment of attachments) {
+														const index = field.value?.findIndex(
+															(v) => v.id === attachment.id,
+														);
+														if (undefined !== index && -1 !== index) {
+															nextValue.splice(index, 1, attachment);
+															continue;
+														}
+														nextValue.push(attachment);
+													}
+													field.onChange(nextValue);
+												}}
+												multiple
+												allowedTypes={['image', 'application/pdf']}
+											/>
+											<div className="p-4 mt-8 border border-dashed border-gray-300 rounded-md">
+												{!field.value ? (
+													<p>No documents</p>
+												) : (
+													<div className="flex flex-col gap-2">
+														{field.value.map((file) => (
+															<div
+																key={file.id}
+																className="flex border border-gray-300 gap-4 p-4 rounded-md items-center justify-between"
+															>
+																<div className="flex items-center gap-4">
+																	{file.type.startsWith('image') ? (
+																		<Image />
+																	) : (
+																		<FileIcon />
+																	)}
+																	<span>
+																		{file.title + ` (${file.filename})`}
+																	</span>
+																	<Button asChild variant="link">
+																		<a
+																			href={file.url}
+																			target="_blank"
+																			rel="noopener noreferrer"
+																		>
+																			<Eye className="h-4 w-4" />
+																			<span className="sr-only">
+																				Preview document {file.title}
+																			</span>
+																		</a>
+																	</Button>
+																</div>
+																<Button
+																	variant="ghost"
+																	className="h-5 w-5 p-0"
+																	onClick={() => {
+																		field.onChange(
+																			field.value?.filter(
+																				(f) => f.id !== file.id,
+																			),
+																		);
+																	}}
+																>
+																	<X />
+																</Button>
+															</div>
+														))}
+													</div>
+												)}
+											</div>
+										</>
+									</FormControl>
+									{form.formState.errors.documents && (
+										<FormMessage>
+											{form.formState.errors.documents.message}
+										</FormMessage>
+									)}
+								</FormItem>
+							)}
+						/>
+					</div>
 				</div>
 				<Button
 					type="submit"
@@ -348,6 +506,7 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 					{submitBtnText}
 				</Button>
 			</ReactForm>
+			<DevTool control={form.control} />
 		</FormProvider>
 	);
 };
