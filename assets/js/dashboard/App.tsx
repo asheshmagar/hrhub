@@ -22,6 +22,7 @@ export const App = () => {
 						</ScrollArea>
 					</main>
 				</div>
+				<div className="screen-reader-text"></div>
 				<Toaster />
 				<ReactQueryDevtools initialIsOpen={false} />
 			</QueryClientProvider>
