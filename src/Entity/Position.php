@@ -23,7 +23,7 @@ class Position {
 	#[Column( type: 'string', length: 255 )]
 	private $name;
 
-	#[Column( type: 'text' )]
+	#[Column( type: 'text', nullable: true )]
 	private $description;
 
 	#[OneToMany( targetEntity: Employee::class, mappedBy: 'position' )]
