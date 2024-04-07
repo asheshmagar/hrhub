@@ -3,9 +3,14 @@
 namespace HRHub\Controller\V1;
 
 use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManager;
+use HRHub\Entity\Department;
+use HRHub\Entity\Document;
 use HRHub\Entity\Employee;
+use HRHub\Entity\Position;
 use HRHub\Entity\WPUser;
+use HRHub\Service\DocumentService;
 use HRHub\Service\EmployeeService;
 use JMS\Serializer\Serializer;
 
@@ -115,8 +120,8 @@ class EmployeesController extends \WP_REST_Controller {
 	 * @return array|\WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
-		$data = $request->get_params();
-
+		$data  = $request->get_params();
+		$files = $request->get_file_params();
 		if ( isset( $data['date_of_birth'] ) ) {
 			$timestamp             = strtotime( $data['date_of_birth'] );
 			$data['date_of_birth'] = ( new DateTime( "@$timestamp" ) );
@@ -148,7 +153,73 @@ class EmployeesController extends \WP_REST_Controller {
 		}
 		$data['wp_user_id'] = $user;
 
+		if ( isset( $data['position'] ) ) {
+			$position = $this->entity_service->em->find( Position::class, $data['position'] );
+
+			if ( ! $position ) {
+				return new \WP_Error(
+					'rest_invalid_position',
+					__( 'Invalid position.' ),
+					[ 'status' => 400 ]
+				);
+			}
+			$data['position'] = $position;
+		}
+
+		if ( isset( $data['department'] ) ) {
+			$department = $this->entity_service->em->find( Department::class, $data['department'] );
+
+			if ( ! $department ) {
+				return new \WP_Error(
+					'rest_invalid_department',
+					__( 'Invalid department.' ),
+					[ 'status' => 400 ]
+				);
+			}
+			$data['department'] = $department;
+		}
+
 		return $data;
+	}
+
+	/**
+	 * Handle documents upload.
+	 *
+	 * @param array $documents
+	 * @return array
+	 */
+	protected function handle_documents_upload( array $documents ) {
+		$count         = count( $documents['name'] ?? [] );
+		$max_size      = 1024 * 1024 * 2;
+		$allowed_types = [ 'image/jpg', 'image/png', 'image/jpeg', 'image/webp', 'application/pdf' ];
+		$ds            = hrhub( DocumentService::class );
+
+		$collection = [];
+
+		for ( $i = 0; $i < $count; $i++ ) {
+			$name     = $documents['name'][ $i ];
+			$type     = $documents['type'][ $i ];
+			$tmp_name = $documents['tmp_name'][ $i ];
+			$error    = $documents['error'][ $i ];
+			$size     = $documents['size'][ $i ];
+			if ( ! in_array( $type, $allowed_types, true ) || $size > $max_size ) {
+				continue;
+			}
+			$document = $ds->handle_upload(
+				[
+					'name'     => $name,
+					'type'     => $type,
+					'tmp_name' => $tmp_name,
+					'error'    => $error,
+					'size'     => $size,
+				]
+			);
+			if ( is_wp_error( $document ) ) {
+				continue;
+			}
+			$collection[] = $document;
+		}
+		return $collection;
 	}
 
 	/**
