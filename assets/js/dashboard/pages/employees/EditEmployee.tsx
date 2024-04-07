@@ -23,7 +23,16 @@ export const EditEmployee = () => {
 
 	useEffect(() => {
 		if (data && !form.formState.isDirty) {
-			form.reset(data);
+			form.reset({
+				...data,
+				// @ts-expect-error
+				department: data?.department?.id
+					? // @ts-expect-error
+						Number(data.department.id)
+					: undefined,
+				// @ts-expect-error
+				position: data?.position?.id ? Number(data.position.id) : undefined,
+			});
 		}
 	}, [data]); // eslint-disable-line
 
