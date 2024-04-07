@@ -3,30 +3,39 @@ import { Plus } from 'lucide-react';
 import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BreadCrumb from '../../../@/components/breadcrumbs';
+import { ListTable } from '../../../@/components/list-table';
 import { buttonVariants } from '../../../@/components/ui/button';
 import { Heading } from '../../../@/components/ui/heading';
 import { Separator } from '../../../@/components/ui/separator';
 import { Api } from '../../../@/lib/api';
 import { cn } from '../../../@/lib/utils';
-import { EmployeesSchema } from '../../types/types';
+import { PositionSchema } from '../../types/schema';
+import { columns } from './components/columns';
+
+type Position = {
+	current: number;
+	positions: Array<PositionSchema & { id: number }>;
+	pages: number;
+	total: number;
+};
 
 export const Positions = () => {
-	const api = new Api('hrhub/v1/department');
+	const api = new Api('hrhub/v1/positions');
 	const [searchParams, setSearchParams] = useSearchParams();
 	const queryClient = useQueryClient();
 	const positionsQuery = useQuery({
 		queryKey: ['positions'],
 		queryFn: () =>
-			api.list<EmployeesSchema>({
+			api.list<Position>({
 				per_page: searchParams.get('limit') ?? undefined,
 				page: searchParams.get('page') ?? undefined,
 				search: searchParams.get('search') ?? undefined,
 			}),
 	});
 
-	const employeesMutation = useMutation({
+	const positionsMutation = useMutation({
 		mutationFn: (data: { per_page?: string; page?: string; search?: string }) =>
-			api.list<EmployeesSchema>(data),
+			api.list<Position>(data),
 		onSuccess(data) {
 			queryClient.setQueryData(['positions'], data);
 		},
@@ -41,7 +50,7 @@ export const Positions = () => {
 			}
 		}
 		setSearchParams(searchParams);
-		employeesMutation.mutate({
+		positionsMutation.mutate({
 			per_page: searchParams.get('limit') ?? undefined,
 			page: searchParams.get('page') ?? undefined,
 			search: searchParams.get('search') ?? undefined,
@@ -65,6 +74,27 @@ export const Positions = () => {
 				</Link>
 			</div>
 			<Separator />
+			{positionsQuery.isLoading ? (
+				<p>Loading...</p>
+			) : (
+				<ListTable
+					columns={columns}
+					data={
+						positionsQuery.data?.positions.map((e) => ({
+							id: e.id,
+							name: e.name,
+							description: e.description ?? '(No description)',
+						})) ?? []
+					}
+					pages={positionsQuery.data?.pages ?? -1}
+					total={positionsQuery.data?.total ?? 0}
+					onQuery={onSearchParamsChange}
+					page={searchParams.get('page') ?? '1'}
+					limit={searchParams.get('limit') ?? '10'}
+					search={searchParams.get('search') ?? ''}
+					loading={positionsQuery.isLoading || positionsMutation.isPending}
+				/>
+			)}
 		</div>
 	);
 };
