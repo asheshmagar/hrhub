@@ -75,6 +75,7 @@ class Admin {
 	 * @return void
 	 */
 	public function load_hrhub_dashboard() {
+		wp_enqueue_media();
 		$am = hrhub( AssetManager::class );
 		$am->enqueue_backend_scripts();
 		$am->enqueue_backend_styles();
