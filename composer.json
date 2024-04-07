@@ -2,7 +2,7 @@
   "name": "ashesh/hrhub",
   "autoload": {
     "files": [
-      "src/Helpers/dashboard.php"
+      "src/Helper/core.php"
     ],
     "psr-4": {
       "HRHub\\": "src/"
