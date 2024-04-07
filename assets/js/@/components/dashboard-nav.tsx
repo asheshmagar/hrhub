@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { Link } from 'react-router-dom';
+import { NavLink as Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { NavItem } from '../types';
 import { Icons } from './icons';
@@ -13,7 +13,6 @@ export function DashboardNav({ items, setOpen }: DashboardNavProps) {
 	if (!items?.length) {
 		return null;
 	}
-
 	return (
 		<nav className="grid items-start gap-2">
 			{items.map((item, index) => {
@@ -26,17 +25,16 @@ export function DashboardNav({ items, setOpen }: DashboardNavProps) {
 							onClick={() => {
 								if (setOpen) setOpen(false);
 							}}
-						>
-							<span
-								className={cn(
+							className={({ isActive }) => {
+								return cn(
 									'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
-									//   path === item.href ? "bg-accent" : "transparent",
+									isActive ? 'bg-accent' : 'transparent',
 									item.disabled && 'cursor-not-allowed opacity-80',
-								)}
-							>
-								<Icon className="mr-2 h-4 w-4" />
-								<span>{item.title}</span>
-							</span>
+								);
+							}}
+						>
+							<Icon className="mr-2 h-4 w-4" />
+							<span>{item.title}</span>
 						</Link>
 					)
 				);
