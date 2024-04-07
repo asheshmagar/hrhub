@@ -4,8 +4,11 @@ namespace HRHub\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use HRHub\Traits\Hook;
 
 abstract class AbstractService {
+
+	use Hook;
 
 	/**
 	 * Constructor.
