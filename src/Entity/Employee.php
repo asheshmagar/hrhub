@@ -45,7 +45,7 @@ class Employee {
 	#[Column( type: 'string', length: 255 )]
 	private $address;
 
-	#[Column( type: 'string', nullable: true )]
+	#[Column( type: 'json', nullable: true )]
 	private $documents;
 
 	#[ManyToOne( targetEntity: Department::class, inversedBy: 'employees' )]
@@ -66,7 +66,7 @@ class Employee {
 	private $attendances;
 
 	#[Column( type: 'string' )]
-	private $status;
+	private $status = 'inactive';
 
 	#[Column( type: 'float', nullable: true )]
 	private $salary;
@@ -76,7 +76,7 @@ class Employee {
 	private $wp_user_id;
 
 	#[Column( type: 'string', length: 255 )]
-	private $employment_type;
+	private $employment_type = 'full-time';
 
 	/**
 	 * Constructor.
@@ -116,6 +116,7 @@ class Employee {
 			return $this;
 		}
 		$this->reviews->add( $review );
+		$review->set_employee( $this );
 		return $this;
 	}
 
@@ -154,6 +155,7 @@ class Employee {
 			return $this;
 		}
 		$this->leaves->add( $leave );
+		$leave->set_employee( $this );
 		return $this;
 	}
 
@@ -192,6 +194,7 @@ class Employee {
 			return $this;
 		}
 		$this->attendances->add( $attendance );
+		$attendance->set_employee( $this );
 		return $this;
 	}
 
@@ -379,28 +382,18 @@ class Employee {
 		return $this;
 	}
 
-	public function get_documents() {
-		$docs = $this->documents;
-		$docs = maybe_unserialize( $docs );
-		if ( ! is_array( $docs ) || empty( $docs ) ) {
-			return [];
-		}
-		return array_filter(
-			array_map(
-				function ( $doc ) {
-					$attachment = get_attached_media( 'image', $doc );
-					if ( $attachment ) {
-						return $attachment;
-					}
-					return false;
-				},
-				$docs
-			)
-		);
+	public function get_documents(): ?array {
+		return $this->documents;
 	}
 
-	public function set_documents( $documents ) {
-		$this->documents = maybe_serialize( $documents );
+	/**
+	 * Set document.
+	 *
+	 * @param array|null $documents
+	 * @return self
+	 */
+	public function set_documents( ?array $documents ): self {
+		$this->documents = $documents;
 		return $this;
 	}
 
