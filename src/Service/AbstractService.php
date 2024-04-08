@@ -4,6 +4,7 @@ namespace HRHub\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use HRHub\Entity\Employee;
 use HRHub\Traits\Hook;
 
 abstract class AbstractService {
@@ -33,7 +34,7 @@ abstract class AbstractService {
 				$entity->$method( $value );
 			}
 		}
-		return $entity;
+		return $this->filter( 'hrhub:hydrated:entity', $entity, $data );
 	}
 
 	/**
@@ -55,6 +56,7 @@ abstract class AbstractService {
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
+			$this->action( 'hrhub:entity:created', $entity, $data );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_create_error', $e->getMessage() );
 		}
@@ -73,6 +75,7 @@ abstract class AbstractService {
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
+			$this->action( 'hrhub:entity:updated', $entity, $data );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_update_error', $e->getMessage() );
 		}
@@ -93,6 +96,7 @@ abstract class AbstractService {
 			}
 			$this->em->remove( $entity );
 			$this->em->flush();
+			$this->action( 'hrhub:entity:deleted', $entity );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_delete_error', $e->getMessage() );
 		}

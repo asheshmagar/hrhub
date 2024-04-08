@@ -12,9 +12,12 @@ use HRHub\Entity\Position;
 use HRHub\Entity\WPUser;
 use HRHub\Service\DocumentService;
 use HRHub\Service\EmployeeService;
+use HRHub\Traits\Hook;
 use JMS\Serializer\Serializer;
 
 class EmployeesController extends \WP_REST_Controller {
+
+	use Hook;
 
 	/**
 	 * Namespace.
@@ -121,7 +124,6 @@ class EmployeesController extends \WP_REST_Controller {
 	 */
 	protected function prepare_item_for_database( $request ) {
 		$data  = $request->get_params();
-		$files = $request->get_file_params();
 		if ( isset( $data['date_of_birth'] ) ) {
 			$timestamp             = strtotime( $data['date_of_birth'] );
 			$data['date_of_birth'] = ( new DateTime( "@$timestamp" ) );
@@ -179,47 +181,7 @@ class EmployeesController extends \WP_REST_Controller {
 			$data['department'] = $department;
 		}
 
-		return $data;
-	}
-
-	/**
-	 * Handle documents upload.
-	 *
-	 * @param array $documents
-	 * @return array
-	 */
-	protected function handle_documents_upload( array $documents ) {
-		$count         = count( $documents['name'] ?? [] );
-		$max_size      = 1024 * 1024 * 2;
-		$allowed_types = [ 'image/jpg', 'image/png', 'image/jpeg', 'image/webp', 'application/pdf' ];
-		$ds            = hrhub( DocumentService::class );
-
-		$collection = [];
-
-		for ( $i = 0; $i < $count; $i++ ) {
-			$name     = $documents['name'][ $i ];
-			$type     = $documents['type'][ $i ];
-			$tmp_name = $documents['tmp_name'][ $i ];
-			$error    = $documents['error'][ $i ];
-			$size     = $documents['size'][ $i ];
-			if ( ! in_array( $type, $allowed_types, true ) || $size > $max_size ) {
-				continue;
-			}
-			$document = $ds->handle_upload(
-				[
-					'name'     => $name,
-					'type'     => $type,
-					'tmp_name' => $tmp_name,
-					'error'    => $error,
-					'size'     => $size,
-				]
-			);
-			if ( is_wp_error( $document ) ) {
-				continue;
-			}
-			$collection[] = $document;
-		}
-		return $collection;
+		return $this->filter( 'hrhub:rest:employees:pre-insert', $data, $request );
 	}
 
 	/**
@@ -229,13 +191,26 @@ class EmployeesController extends \WP_REST_Controller {
 	 * @return int|\WP_Error
 	 */
 	protected function create_wp_user( $email ) {
-		$user_id = email_exists( $email );
-		if ( ! $user_id ) {
-			$username = $this->generate_username_from_email( $email );
-			$user_id  = wp_create_user( $username, wp_generate_password(), $email );
+		$employee_id = email_exists( $email );
+		if ( ! $employee_id ) {
+			$username          = $this->generate_username_from_email( $email );
+			$password          = wp_generate_password();
+			$new_employee_data = [
+				'user_login' => $username,
+				'user_pass'  => $password,
+				'user_email' => $email,
+				// 'role' => 'employee'
+			];
+			$employee_id = wp_insert_user( $new_employee_data );
+
+			if ( is_wp_error( $employee_id ) ) {
+				return $employee_id;
+			}
+
+			$this->action( 'hrhub:employee:created', $employee_id, $new_employee_data, );
 		}
 
-		return $user_id;
+		return $employee_id;
 	}
 
 	protected function generate_username_from_email( $email, $suffix = '' ) {

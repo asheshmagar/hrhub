@@ -11,11 +11,14 @@ use Doctrine\Migrations\DependencyFactory;
 use Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration;
 use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\Migrations\Version\Direction;
+use HRHub\Traits\Hook;
 
 /**
  * Migrator class.
  */
 class Migrator {
+
+	use Hook;
 
 	/**
 	 * Dependency factory.
@@ -89,6 +92,8 @@ class Migrator {
 		foreach ( $migration_versions as $migration_version ) {
 			$this->run_migration( $migration_version );
 		}
+
+		$this->action( 'hrhub:migrations:complete', $migration_versions );
 	}
 
 	/**
@@ -109,7 +114,8 @@ class Migrator {
 				return ! in_array( $migration_version, $executed_versions, true );
 			}
 		);
-		return $migration_versions;
+
+		return $this->filter( 'hrhub:migration:versions', $migration_versions );
 	}
 
 	/**
@@ -120,6 +126,7 @@ class Migrator {
 	 * @return void
 	 */
 	protected function run_migration( $migration_version, $rollback = false ) {
+		$this->action( 'hrhub:migration:start', $migration_version, $rollback );
 		try {
 			$migration = $this->dependency_factory->getMigrationPlanCalculator()->getPlanForVersions(
 				[ $migration_version ],
@@ -129,6 +136,7 @@ class Migrator {
 				$migration,
 				( new MigratorConfiguration() )->setAllOrNothing( false )
 			);
+			$this->action( 'hrhub:migration:complete', $migration_version, $rollback );
 		} catch ( \Exception $e ) {
 			error_log( 'There were problems during db-migration.' . "\n" . $e->getMessage() . "\n\n" ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		}

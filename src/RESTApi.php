@@ -10,11 +10,14 @@ use HRHub\Controller\V1\EmployeesController;
 use HRHub\Controller\V1\PositionsController;
 use HRHub\Controller\V1\AttendancesController;
 use HRHub\Controller\V1\DepartmentsController;
+use HRHub\Traits\Hook;
 
 /**
  * RESTApi class.
  */
 class RESTApi {
+
+	use Hook;
 
 	/**
 	 * Constructor.
@@ -50,7 +53,7 @@ class RESTApi {
 	 * @return void
 	 */
 	private function init_hooks() {
-		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+		$this->add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
 	}
 
 	/**
@@ -65,5 +68,7 @@ class RESTApi {
 		$this->leaves_controller->register_routes();
 		$this->positions_controller->register_routes();
 		$this->reviews_controller->register_routes();
+
+		$this->action( 'hrhub:rest:routes:registered', $this );
 	}
 }
