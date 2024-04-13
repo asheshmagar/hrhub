@@ -7,7 +7,7 @@ import { EditEmployee } from '../pages/employees/EditEmployee';
 import { Employees } from '../pages/employees/Employees';
 import { NewEmployee } from '../pages/employees/NewEmployee';
 import { Overview } from '../pages/overview/Overview';
-import { EditPosition } from '../pages/positions/EditDepartment';
+import { EditPosition } from '../pages/positions/EditPosition';
 import { NewPosition } from '../pages/positions/NewPosition';
 import { Positions } from '../pages/positions/Positions';
 
