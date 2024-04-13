@@ -12,10 +12,8 @@ use HRHub\Entity\Leave;
 use Doctrine\ORM\Events;
 use HRHub\Entity\Review;
 use Doctrine\ORM\ORMSetup;
-use HRHub\Entity\Document;
 use HRHub\Entity\Employee;
 use HRHub\Entity\Position;
-use HRHub\Entity\Attachment;
 use HRHub\Entity\Attendance;
 use HRHub\Entity\Department;
 use JMS\Serializer\Serializer;
@@ -23,7 +21,6 @@ use Doctrine\ORM\EntityManager;
 use HRHub\Service\LeaveService;
 use HRHub\Service\ReviewService;
 use Doctrine\Common\EventManager;
-use HRHub\Service\DocumentService;
 use HRHub\Service\EmployeeService;
 use HRHub\Service\PositionService;
 use HRHub\AssetManager\AssetManager;
@@ -37,6 +34,8 @@ use HRHub\Controller\V1\EmployeesController;
 use HRHub\Controller\V1\PositionsController;
 use HRHub\Controller\V1\AttendancesController;
 use HRHub\Controller\V1\DepartmentsController;
+use HRHub\Email\EmailHooks;
+use HRHub\TemplateLoader;
 
 use function DI\get;
 use function DI\create;
@@ -54,25 +53,28 @@ return [
 		return new Connection( $config );
 	},
 	EntityManager::class         => function ( Connection $conn ) {
-		$is_dev = defined( 'HRHUB_IS_DEVELOPMENT' ) && HRHUB_IS_DEVELOPMENT;
-
 		$evm = new EventManager();
 		$evm->addEventListener( Events::loadClassMetadata, new TablePrefixSubscriber() );
+
+		$proxy_dir = realpath( HRHUB_PLUGIN_DIR . 'var/doctrine/proxies' );
+
+		if ( ! is_dir( $proxy_dir ) ) {
+			wp_mkdir_p( $proxy_dir );
+			chmod( $proxy_dir, 0755 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		}
 
 		$em_config = ORMSetup::createAttributeMetadataConfiguration(
 			[
 				realpath( HRHUB_PLUGIN_DIR . 'src/Entity' ),
-			]
+			],
+			true,
+			realpath( HRHUB_PLUGIN_DIR . 'var/doctrine/proxies' )
 		);
 
-		$em_config->setProxyDir( realpath( HRHUB_PLUGIN_DIR . 'src/Proxy' ) );
-		$em_config->setProxyNamespace( 'HRHub\Proxy' );
+		$em_config->setProxyDir( realpath( HRHUB_PLUGIN_DIR . 'var/doctrine/proxies' ) );
+		$em_config->setProxyNamespace( 'HRHub\Proxies' );
 
-		if ( $is_dev ) {
-			$em_config->setAutoGenerateProxyClasses( true );
-		} else {
-			$em_config->setAutoGenerateProxyClasses( false );
-		}
+		$em_config->setAutoGenerateProxyClasses( true );
 
 		return new EntityManager( $conn::get_connection(), $em_config, $evm );
 	},
@@ -80,6 +82,7 @@ return [
 		return new Migrator( $conn );
 	},
 	AssetManager::class          => create( AssetManager::class ),
+	TemplateLoader::class        => create( TemplateLoader::class ),
 	Activate::class              => create( Activate::class ),
 	App::class                   => create( App::class ),
 	Admin::class                 => create( Admin::class ),
@@ -110,4 +113,5 @@ return [
 		get( PositionsController::class ),
 		get( ReviewsController::class )
 	),
+	EmailHooks::class            => create( EmailHooks::class ),
 ];
