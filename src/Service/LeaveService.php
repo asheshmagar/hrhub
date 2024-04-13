@@ -2,10 +2,13 @@
 
 namespace HRHub\Service;
 
+use Doctrine\ORM\QueryBuilder;
 use HRHub\Entity\Leave;
 use HRHub\Repository\LeaveRepository;
 
 class LeaveService extends AbstractService {
+
+	protected $entity = Leave::class;
 
 	/**
 	 * Get object.
@@ -16,11 +19,15 @@ class LeaveService extends AbstractService {
 		return new Leave();
 	}
 
-	public function list( ?array $args = [] ): array {
-		return [];
-	}
-
-	public function get_entity_class_name(): string {
-		return Leave::class;
+	/**
+	 * Create query builder.
+	 *
+	 * @return QueryBuilder
+	 */
+	protected function create_query_builder(): QueryBuilder {
+		$query_builder = $this->em->createQueryBuilder()
+							->select( 'l' )
+							->from( $this->entity, 'l' );
+		return $query_builder;
 	}
 }

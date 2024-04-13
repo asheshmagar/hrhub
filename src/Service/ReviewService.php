@@ -2,10 +2,13 @@
 
 namespace HRHub\Service;
 
+use Doctrine\ORM\QueryBuilder;
 use HRHub\Entity\Review;
 use HRHub\Repository\ReviewRepository;
 
 class ReviewService extends AbstractService {
+
+	protected $entity = Review::class;
 
 	/**
 	 * Get object.
@@ -16,11 +19,15 @@ class ReviewService extends AbstractService {
 		return new Review();
 	}
 
-	public function list( ?array $args = [] ): array {
-		return [];
-	}
-
-	public function get_entity_class_name(): string {
-		return Review::class;
+	/**
+	 * Create query builder.
+	 *
+	 * @return QueryBuilder
+	 */
+	protected function create_query_builder(): QueryBuilder {
+		$query_builder = $this->em->createQueryBuilder()
+						->select( 'r' )
+						->from( $this->entity, 'r' );
+		return $query_builder;
 	}
 }

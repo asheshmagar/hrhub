@@ -2,9 +2,12 @@
 
 namespace HRHub\Service;
 
+use Doctrine\ORM\QueryBuilder;
 use HRHub\Entity\Attendance;
 
 class AttendanceService extends AbstractService {
+
+	protected $entity = Attendance::class;
 
 	/**
 	 * Get object.
@@ -15,11 +18,15 @@ class AttendanceService extends AbstractService {
 		return new Attendance();
 	}
 
-	public function list( ?array $args = [] ): array {
-		return [];
-	}
-
-	public function get_entity_class_name(): string {
-		return Attendance::class;
+	/**
+	 * Create query builder.
+	 *
+	 * @return QueryBuilder
+	 */
+	protected function create_query_builder(): QueryBuilder {
+		$query_builder = $this->em->createQueryBuilder()
+						->select( 'a', )
+						->from( $this->entity, 'a' );
+		return $query_builder;
 	}
 }

@@ -3,11 +3,12 @@
 namespace HRHub\Service;
 
 use HRHub\Entity\Department;
-use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\QueryBuilder;
 use HRHub\Service\AbstractService;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 
 class DepartmentService extends AbstractService {
+
+	protected $entity = Department::class;
 
 	/**
 	 * Get object.
@@ -19,44 +20,15 @@ class DepartmentService extends AbstractService {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Create query builder.
+	 *
+	 * @return QueryBuilder
 	 */
-	public function list( ?array $query_args = [] ): array {
-		$defaults   = [
-			'search'   => null,
-			'page'     => 1,
-			'per_page' => 10,
-		];
-		$query_args = wp_parse_args( $query_args, $defaults );
-		$qb         = $this->em->createQueryBuilder()
+	protected function create_query_builder(): QueryBuilder {
+		$query_builder = $this->em->createQueryBuilder()
 						->select( 'd', 'e' )
-						->from( Department::class, 'd' )
+						->from( $this->entity, 'd' )
 						->leftJoin( 'd.employees', 'e' );
-
-		if ( $query_args['search'] ) {
-			$qb->where( 'd.name LIKE :search' )
-				->setParameter( 'search', '%' . $query_args['search'] . '%' );
-		}
-
-		$limit = absint( $query_args['per_page'] ?? 10 );
-		$page  = absint( $query_args['page'] ?? 1 );
-
-		$paginator = new Paginator( $qb );
-		$total     = count( $paginator );
-		$employees = $paginator->getQuery()
-						->setFirstResult( $limit * ( $page - 1 ) )
-						->setMaxResults( $limit )
-						->getResult( AbstractQuery::HYDRATE_ARRAY );
-
-		return [
-			'departments' => $employees,
-			'total'       => $total,
-			'current'     => $query_args['page'],
-			'pages'       => ceil( $total / $limit ),
-		];
-	}
-
-	public function get_entity_class_name(): string {
-		return Department::class;
+		return $query_builder;
 	}
 }
