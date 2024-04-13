@@ -15,11 +15,30 @@ export class Api {
 		this.#path = trailingslashit(path);
 	}
 
-	async list<T>(q?: Record<string, any>) {
-		return apiFetch<T>({
-			path: this.#path + '?' + queryString.stringify(q ?? {}),
-			method: ApiMethod.READABLE,
-		});
+	async list<T, E = Error>(q?: Record<string, any>) {
+		try {
+			const res = await apiFetch<Response>({
+				path: this.#path + '?' + queryString.stringify(q ?? {}),
+				method: ApiMethod.READABLE,
+				parse: false,
+			});
+
+			if (!(res.status >= 200 && res.status < 300)) {
+				throw res;
+			}
+
+			const total = res.headers.get('X-WP-Total');
+			const pages = res.headers.get('X-WP-TotalPages');
+			const data = await res.json();
+
+			return {
+				data,
+				total: total ? parseInt(total) : undefined,
+				pages: pages ? parseInt(pages) : undefined,
+			} as T;
+		} catch (error) {
+			throw error as E;
+		}
 	}
 
 	async create<T extends {}, R>(data: T) {
@@ -51,9 +70,9 @@ export class Api {
 		});
 	}
 
-	async get<T>(id: number) {
+	async get<T>(id: number, context: 'edit' | 'embed' | 'view' = 'view') {
 		return apiFetch<T>({
-			path: this.#path + id,
+			path: this.#path + id + '?context=' + context,
 			method: ApiMethod.READABLE,
 		});
 	}
