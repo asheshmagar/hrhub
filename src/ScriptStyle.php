@@ -59,10 +59,10 @@ class ScriptStyle {
 	 */
 	public function after_wp_init() {
 		$this->register_scripts();
-		$this->action( 'register/scripts', $this );
+		$this->action( 'register:scripts', $this );
 
 		$this->register_styles();
-		$this->action( 'register/styles', $this );
+		$this->action( 'register:styles', $this );
 	}
 
 	private function register_scripts() {
