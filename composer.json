@@ -21,7 +21,8 @@
     "doctrine/dbal": "^3.8",
     "symfony/cache": "^5.4",
     "doctrine/migrations": "^3.5",
-    "jms/serializer": "^3.30"
+    "jms/serializer": "^3.30",
+    "woocommerce/action-scheduler": "^3.7"
   },
   "require-dev": {
     "symfony/maker-bundle": "^1.43"
