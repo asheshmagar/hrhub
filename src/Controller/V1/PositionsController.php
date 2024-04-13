@@ -4,9 +4,12 @@ namespace HRHub\Controller\V1;
 
 use HRHub\Entity\Position;
 use HRHub\Service\PositionService;
+use HRHub\Traits\Hook;
 use JMS\Serializer\Serializer;
 
-class PositionsController extends \WP_REST_Controller {
+class PositionsController extends AbstractEntitiesController {
+
+	use Hook;
 
 	/**
 	 * Namespace.
@@ -23,167 +26,88 @@ class PositionsController extends \WP_REST_Controller {
 	protected $rest_base = 'positions';
 
 	/**
-	 * Constructor.
+	 * Entity.
 	 *
-	 * @param PositionService $entity_service
+	 * @var string
 	 */
-	public function __construct( protected PositionService $entity_service, protected Serializer $serializer ) {
-		$this->entity_service = $entity_service;
-	}
-
-	public function register_routes() {
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base,
-			[
-				[
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => [ $this, 'get_items' ],
-					'permission_callback' => [ $this, 'get_items_permissions_check' ],
-					'args'                => $this->get_collection_params(),
-				],
-				[
-					'methods'             => \WP_REST_Server::CREATABLE,
-					'callback'            => [ $this, 'create_item' ],
-					'permission_callback' => [ $this, 'create_item_permissions_check' ],
-					'args'                => $this->get_endpoint_args_for_item_schema( \WP_REST_Server::CREATABLE ),
-				],
-			]
-		);
-
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base . '/(?P<id>\d+)',
-			[
-				'args' => [
-					'id' => [
-						'description' => __( 'Unique identifier for the position.' ),
-						'type'        => 'integer',
-					],
-				],
-				[
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => [ $this, 'get_item' ],
-					'permission_callback' => [ $this, 'update_item_permissions_check' ],
-				],
-				[
-					'methods'             => \WP_REST_Server::EDITABLE,
-					'callback'            => [ $this, 'update_item' ],
-					'permission_callback' => [ $this, 'update_item_permissions_check' ],
-				],
-				[
-					'methods'             => \WP_REST_Server::DELETABLE,
-					'callback'            => [ $this, 'delete_item' ],
-					'permission_callback' => [ $this, 'delete_item_permissions_check' ],
-				],
-			]
-		);
-	}
-
-	public function get_items_permissions_check( $request ) {
-		return true;
-	}
-
-	public function create_item_permissions_check( $request ) {
-		return true;
-	}
-
-	public function get_item_permissions_check( $request ) {
-		return true;
-	}
-	public function update_item_permissions_check( $request ) {
-		return true;
-	}
+	protected $entity = Position::class;
 
 	/**
-	 * Get items.
+	 * Prepare a single position entity for response.
 	 *
-	 * @param \WP_REST_Request $request Full data about the request.
+	 * @param Position $position
+	 * @param \WP_REST_Request $request
 	 * @return \WP_REST_Response
 	 */
-	public function get_items( $request ) {
-		$query_args = $request->get_query_params();
-		$employees  = $this->entity_service->list( $query_args );
-		return rest_ensure_response( $employees );
+	public function prepare_item_for_response( $position, $request ) {
+		$data = $this->serializer->toArray( $position );
+
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
+
+		$response = rest_ensure_response( $data );
+
+		$response->add_links( $this->prepare_links( $position ) );
+
+		return $this->filter( 'hrhub:rest:prepare:position', $response, $position, $request );
 	}
 
 	/**
-	 * Create item.
-	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response
-	 */
-	public function create_item( $request ) {
-		$data = $request->get_params();
-		$name = $data['name'];
-
-		if ( $this->entity_service->em->getRepository( Position::class )->findBy(
-			[
-				'name' => $name,
-			]
-		) ) {
-			return new \WP_Error( 'position_exists', 'Position already exists.', [ 'status' => 400 ] );
-		}
-
-		$item = $this->entity_service->create( $data );
-		if ( is_wp_error( $item ) ) {
-			return $item;
-		}
-		$response = rest_ensure_response( $this->serializer->toArray( $item ) );
-		$response->set_status( 201 );
-		$response->header( 'Location', rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->rest_base, $item->get_id() ) ) );
-		return $response;
-	}
-
-	/**
-	 * Delete item.
+	 * Prepares a single position for create or update.
 	 *
 	 * @param \WP_REST_Request $request
-	 * @return \WP_Error|\WP_REST_Response
+	 * @return Position|\WP_Error
 	 */
-	public function delete_item( $request ) {
-		$id     = $request['id'];
-		$entity = $this->entity_service->delete( $id );
+	protected function prepare_item_for_database( $request ) {
+		$id   = $request['id'] ?? 0;
+		$name = $request['name'];
 
-		if ( is_wp_error( $entity ) ) {
-			return $entity;
+		$existing = $this->existing_position( $name, $id );
+
+		if ( $existing ) {
+			return new \WP_Error( 'position_exists', sprintf( 'Position %s already exists.', $name ), [ 'status' => 400 ] );
 		}
 
-		return rest_ensure_response( $entity );
+		if ( ! $id ) {
+			$position = new Position();
+		} else {
+			/**
+			 * @var Position
+			 */
+			$position = $this->entity_service->em->find( Position::class, $id );
+		}
+
+		$position->set_name( $name );
+
+		if ( isset( $request['description'] ) ) {
+			$position->set_description( sanitize_textarea_field( wp_unslash( $request['description'] ) ) );
+		}
+
+		return $this->filter( 'hrhub:rest:position:pre-insert', $position, $request );
 	}
 
 	/**
-	 * Update item.
+	 * Check existing position.
 	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response|\WP_Error
+	 * @param string $name
+	 * @param integer $id
+	 * @return boolean
 	 */
-	public function update_item( $request ) {
-		$id = $request['id'];
-
-		$item = $this->entity_service->em->find( Position::class, $id );
-		if ( ! $item ) {
-			return new \WP_Error( 'not_found', 'Position not found.', [ 'status' => 404 ] );
+	protected function existing_position( $name, $id = 0 ) {
+		$criteria = [ 'name' => $name ];
+		if ( $id ) {
+			$criteria['id'] = [ '<>' => $id ];
 		}
-		$data = $request->get_params();
-		unset( $data['id'] );
-		$item = $this->entity_service->update( $item, $data );
-		return rest_ensure_response( $this->serializer->toArray( $item ) );
-	}
-
-	/**
-	 * Get items.
-	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response|\WP_Error
-	 */
-	public function get_item( $request ) {
-		$id   = $request['id'];
-		$item = $this->entity_service->em->find( Position::class, $id );
-
-		if ( ! $item ) {
-			return new \WP_Error( 'not_found', 'Position not found.', [ 'status' => 404 ] );
+		$query_builder = $this->entity_service->em->getRepository( Position::class )->createQueryBuilder( 'p' );
+		$query_builder->where( 'p.name = :name' )
+					->setParameter( 'name', $name );
+		if ( $id ) {
+			$query_builder->andWhere( 'p.id <> :id' )
+						->setParameter( 'id', $id );
 		}
-		return rest_ensure_response( $this->serializer->toArray( $item ) );
+		$query_builder->setMaxResults( 1 );
+		$entity = $query_builder->getQuery()->getOneOrNullResult();
+		return (bool) $entity;
 	}
 }

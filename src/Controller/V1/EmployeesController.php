@@ -3,21 +3,15 @@
 namespace HRHub\Controller\V1;
 
 use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\EntityManager;
 use HRHub\Entity\Department;
-use HRHub\Entity\Document;
 use HRHub\Entity\Employee;
 use HRHub\Entity\Position;
 use HRHub\Entity\WPUser;
-use HRHub\Service\DocumentService;
 use HRHub\Service\EmployeeService;
 use HRHub\Traits\Hook;
 use JMS\Serializer\Serializer;
 
-class EmployeesController extends \WP_REST_Controller {
-
-	use Hook;
+class EmployeesController extends AbstractEntitiesController {
 
 	/**
 	 * Namespace.
@@ -34,111 +28,97 @@ class EmployeesController extends \WP_REST_Controller {
 	protected $rest_base = 'employees';
 
 	/**
-	 * Constructor
+	 * Entity class.
 	 *
-	 * @param EmployeeService $entity_service
-	 * @param Serializer $serializer
+	 * @var string
 	 */
-	public function __construct(
-		protected EmployeeService $entity_service,
-		protected Serializer $serializer
-	) {
-		$this->entity_service = $entity_service;
-	}
-
-	public function register_routes() {
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base,
-			[
-				[
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => [ $this, 'get_items' ],
-					'permission_callback' => [ $this, 'get_items_permissions_check' ],
-					'args'                => $this->get_collection_params(),
-				],
-				[
-					'methods'             => \WP_REST_Server::CREATABLE,
-					'callback'            => [ $this, 'create_item' ],
-					'permission_callback' => [ $this, 'create_item_permissions_check' ],
-					'args'                => $this->get_endpoint_args_for_item_schema( \WP_REST_Server::CREATABLE ),
-				],
-			]
-		);
-
-		register_rest_route(
-			$this->namespace,
-			'/' . $this->rest_base . '/(?P<id>[\d]+)',
-			[
-				'args' => [
-					'id' => [
-						'description' => __( 'Unique identifier for the employee.' ),
-						'type'        => 'integer',
-					],
-				],
-				[
-					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => [ $this, 'get_item' ],
-					'permission_callback' => [ $this, 'get_item_permissions_check' ],
-				],
-				[
-					'methods'             => \WP_REST_Server::EDITABLE,
-					'callback'            => [ $this, 'update_item' ],
-					'permission_callback' => [ $this, 'update_item_permissions_check' ],
-				],
-				[
-					'methods'             => \WP_REST_Server::DELETABLE,
-					'callback'            => [ $this, 'delete_item' ],
-					'permission_callback' => [ $this, 'delete_item_permissions_check' ],
-				],
-			]
-		);
-	}
+	protected $entity = Employee::class;
 
 	/**
-	 * Create item.
+	 * Prepares a single employee for create or update.
 	 *
 	 * @param \WP_REST_Request $request
-	 * @return void
-	 */
-	public function create_item( $request ) {
-		$data = $this->prepare_item_for_database( $request );
-		if ( is_wp_error( $data ) ) {
-			return $data;
-		}
-		$item = $this->entity_service->create( $data );
-		if ( is_wp_error( $item ) ) {
-			return $item;
-		}
-		$response = rest_ensure_response( $this->serializer->toArray( $item ) );
-		$response->set_status( 201 );
-		$response->header( 'Location', rest_url( sprintf( '/%s/%s/%d', $this->namespace, $this->rest_base, $item->get_id() ) ) );
-		return $response;
-	}
-
-	/**
-	 * Prepare items form database.
-	 *
-	 * @param \WP_REST_Request $request
-	 * @return array|\WP_Error
+	 * @return Employee|\WP_Error
 	 */
 	protected function prepare_item_for_database( $request ) {
-		$data  = $request->get_params();
-		if ( isset( $data['date_of_birth'] ) ) {
-			$timestamp             = strtotime( $data['date_of_birth'] );
-			$data['date_of_birth'] = ( new DateTime( "@$timestamp" ) );
+		$id = $request['id'] ?? 0;
+
+		if ( ! $id ) {
+			$employee = new Employee();
+		} else {
+			/**
+			 * @var Employee
+			 */
+			$employee = $this->entity_service->em->find( Employee::class, $id );
 		}
 
-		if ( isset( $data['date_of_employment'] ) ) {
-			$timestamp                  = strtotime( $data['date_of_employment'] );
-			$data['date_of_employment'] = ( new DateTime( "@$timestamp" ) );
+		if ( isset( $request['name'] ) ) {
+			$employee->set_name( wp_filter_post_kses( $request['name'] ) );
 		}
 
-		if ( ! isset( $data['employment_type'] ) ) {
-			$data['employment_type'] = 'full-time';
+		if ( isset( $request['address'] ) ) {
+			$employee->set_address( wp_filter_post_kses( $request['address'] ) );
 		}
 
-		$wp_user_id = $this->create_wp_user( $data['email'] );
+		if ( isset( $request['email'] ) ) {
+			$employee->set_email( sanitize_email( wp_unslash( $request['email'] ) ) );
+		}
+
+		if ( isset( $request['documents'] ) ) {
+			$employee->set_documents( $request['documents'] );
+		}
+
+		if ( isset( $request['salary'] ) ) {
+			$employee->set_salary( $request['salary'] );
+		}
+
+		if ( isset( $request['phone_number'] ) ) {
+			$employee->set_phone_number( preg_replace( '/[^0-9]/', '', wp_unslash( $request['phone_number'] ) ) );
+		}
+
+		if ( isset( $request['date_of_birth'] ) ) {
+			$timestamp = strtotime( $request['date_of_birth'] );
+			$employee->set_date_of_birth( new DateTime( "@$timestamp" ) );
+		}
+
+		if ( isset( $request['date_of_employment'] ) ) {
+			$timestamp = strtotime( $request['date_of_employment'] );
+			$employee->set_date_of_employment( new DateTime( "@$timestamp" ) );
+		}
+
+		if ( isset( $request['position'] ) ) {
+			$position = $this->entity_service->em->find( Position::class, $request['position'] );
+
+			if ( ! $position ) {
+				return new \WP_Error(
+					'rest_invalid_position',
+					__( 'Invalid position.' ),
+					[ 'status' => 400 ]
+				);
+			}
+			$employee->set_position( $position );
+		}
+
+		if ( isset( $request['department'] ) ) {
+			$department = $this->entity_service->em->find( Department::class, $request['department'] );
+
+			if ( ! $department ) {
+				return new \WP_Error(
+					'rest_invalid_department',
+					__( 'Invalid department.' ),
+					[ 'status' => 400 ]
+				);
+			}
+			$employee->set_position( $position );
+		}
+
+		$employment_type = $request['employment_type'] ?? 'full-time';
+		$employee->set_employment_type( $employment_type );
+
+		$status = $request['status'] ?? 'inactive';
+		$employee->set_status( $status );
+
+		$wp_user_id = $this->create_wp_user( $request['email'] );
 
 		if ( is_wp_error( $wp_user_id ) ) {
 			return $wp_user_id;
@@ -153,35 +133,10 @@ class EmployeesController extends \WP_REST_Controller {
 				[ 'status' => 400 ]
 			);
 		}
-		$data['wp_user_id'] = $user;
 
-		if ( isset( $data['position'] ) ) {
-			$position = $this->entity_service->em->find( Position::class, $data['position'] );
+		$employee->set_wp_user_id( $user );
 
-			if ( ! $position ) {
-				return new \WP_Error(
-					'rest_invalid_position',
-					__( 'Invalid position.' ),
-					[ 'status' => 400 ]
-				);
-			}
-			$data['position'] = $position;
-		}
-
-		if ( isset( $data['department'] ) ) {
-			$department = $this->entity_service->em->find( Department::class, $data['department'] );
-
-			if ( ! $department ) {
-				return new \WP_Error(
-					'rest_invalid_department',
-					__( 'Invalid department.' ),
-					[ 'status' => 400 ]
-				);
-			}
-			$data['department'] = $department;
-		}
-
-		return $this->filter( 'hrhub:rest:employees:pre-insert', $data, $request );
+		return $this->filter( 'hrhub:rest:employees:pre-insert', $employee, $request );
 	}
 
 	/**
@@ -199,33 +154,40 @@ class EmployeesController extends \WP_REST_Controller {
 				'user_login' => $username,
 				'user_pass'  => $password,
 				'user_email' => $email,
-				// 'role' => 'employee'
+				'role'       => 'hrhub_employee',
 			];
-			$employee_id = wp_insert_user( $new_employee_data );
+			$employee_id       = wp_insert_user( $new_employee_data );
 
 			if ( is_wp_error( $employee_id ) ) {
 				return $employee_id;
 			}
 
-			$this->action( 'hrhub:employee:created', $employee_id, $new_employee_data, );
+			$this->action( 'employee:created', $employee_id, $new_employee_data, );
 		}
 
 		return $employee_id;
 	}
 
+	/**
+	 * Generate username from email.
+	 *
+	 * @param string $email
+	 * @param string $suffix
+	 * @return string
+	 */
 	protected function generate_username_from_email( $email, $suffix = '' ) {
 		$email_parts    = explode( '@', $email );
 		$email_username = $email_parts[0];
 
 		if ( in_array(
 			$email_username,
-			array(
+			[
 				'sales',
 				'hello',
 				'mail',
 				'contact',
 				'info',
-			),
+			],
 			true
 		) ) {
 			$email_username = $email_parts[1];
@@ -243,86 +205,28 @@ class EmployeesController extends \WP_REST_Controller {
 		return $username;
 	}
 
-	public function get_items_permissions_check( $request ) {
-		return true;
-	}
-
-	public function create_item_permissions_check( $request ) {
-		return true;
-	}
-
-	public function delete_item_permissions_check( $request ) {
-		return true;
-	}
-
-	public function get_item_permissions_check( $request ) {
-		return true;
-	}
-
-	public function update_item_permissions_check( $request ) {
-		return true;
-	}
 
 	/**
-	 * Get items.
+	 * Prepare a single employee output for response.
 	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response
+	 * @param Employee $employee.
+	 * @param WP_REST_Request $request
+	 * @return WP_REST_Response $response Response data.
 	 */
-	public function get_items( $request ) {
-		$query_args = $request->get_query_params();
-		$employees  = $this->entity_service->list( $query_args );
-		return rest_ensure_response( $employees );
-	}
+	public function prepare_item_for_response( $employee, $request ) {
+		$data = $this->serializer->toArray( $employee );
 
-	/**
-	 * Update item.
-	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response|\WP_Error
-	 */
-	public function update_item( $request ) {
-		$id = $request['id'];
+		unset( $data['wp_user_id']['user_pass'] );
+		unset( $data['wp_user_id']['user_activation_key'] );
 
-		$employee = $this->entity_service->em->find( Employee::class, $id );
-		if ( ! $employee ) {
-			return new \WP_Error( 'not_found', 'Employee not found.', [ 'status' => 404 ] );
-		}
-		$data = $this->prepare_item_for_database( $request );
-		unset( $data['id'] );
-		$employee = $this->entity_service->update( $employee, $data );
-		return rest_ensure_response( $this->serializer->toArray( $employee ) );
-	}
+		$context = ! empty( $request['context'] ) ? $request['context'] : 'view';
+		$data    = $this->add_additional_fields_to_object( $data, $request );
+		$data    = $this->filter_response_by_context( $data, $context );
 
-	/**
-	 * Get items.
-	 *
-	 * @param \WP_REST_Request $request Full data about the request.
-	 * @return \WP_REST_Response|\WP_Error
-	 */
-	public function get_item( $request ) {
-		$id   = $request['id'];
-		$item = $this->entity_service->em->find( Employee::class, $id );
-		if ( ! $item ) {
-			return new \WP_Error( 'not_found', 'Employee not found.', [ 'status' => 404 ] );
-		}
-		return rest_ensure_response( $this->serializer->toArray( $item ) );
-	}
+		$response = rest_ensure_response( $data );
 
-	/**
-	 * Delete item.
-	 *
-	 * @param \WP_REST_Request $request
-	 * @return \WP_Error|\WP_REST_Response
-	 */
-	public function delete_item( $request ) {
-		$id   = $request['id'];
-		$item = $this->entity_service->delete( $id );
+		$response->add_links( $this->prepare_links( $employee ) );
 
-		if ( is_wp_error( $item ) ) {
-			return $item;
-		}
-
-		return rest_ensure_response( $this->serializer->toArray( $item ) );
+		return $this->filter( 'hrhub:rest:prepare:employee', $response, $employee, $request );
 	}
 }
