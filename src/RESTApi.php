@@ -69,6 +69,6 @@ class RESTApi {
 		$this->positions_controller->register_routes();
 		$this->reviews_controller->register_routes();
 
-		$this->action( 'hrhub:rest:routes:registered', $this );
+		$this->action( 'rest:routes:registered', $this );
 	}
 }
