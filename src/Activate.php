@@ -7,6 +7,7 @@ namespace HRHub;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use HRHub\Traits\Hook;
+use WP_Roles;
 
 /**
  * Activate class.
@@ -29,50 +30,23 @@ class Activate {
 	 */
 	public function init_hooks() {
 		register_activation_hook( HRHUB_PLUGIN_FILE, array( $this, 'on_activate' ) );
-		$this->add_action( 'init', [ $this, 'version_check' ], 0 );
 	}
 
 	/**
 	 * On activate.
 	 */
 	public function on_activate() {
-		$this->activate();
-	}
-
-	/**
-	 * Version check.
-	 *
-	 * @return void
-	 */
-	public function version_check() {
-		$current_version = get_option( '_hrhub_version' );
-		if ( empty( $current_version ) ) {
-			return add_option( '_hrhub_version', HRHUB_VERSION );
-
-		}
-		if ( version_compare( $current_version, HRHUB_VERSION, '<' ) ) {
-			do_action( 'hrhub_update_version', HRHUB_VERSION, $current_version );
-			return update_option( '_hrhub_version', HRHUB_VERSION );
-		}
-		return true;
-	}
-
-	/**
-	 * Activate.
-	 *
-	 * @return void
-	 */
-	private function activate() {
-		if ( get_option( '_hrhub_activation_timestamp' ) ) {
-			return;
-		}
-		update_option( '_hrhub_activation_timestamp', time() );
-		update_option( '_hrhub_version', HRHUB_VERSION );
-		flush_rewrite_rules();
+		$this->create_roles();
 		$this->create_schema();
-		flush_rewrite_rules();
+		! get_option( '_hrhub_activation_timestamp' ) && update_option( '_hrhub_activation_timestamp', time() );
+		$this->action( 'activate' );
 	}
 
+	/**
+	 * Create schema.
+	 *
+	 * @return void
+	 */
 	private function create_schema() {
 		$em               = hrhub( EntityManager::class );
 		$schema_tool      = new SchemaTool( $em );
@@ -84,11 +58,25 @@ class Activate {
 				return $meta->getName() !== 'HRHub\Entity\WPUser';
 			}
 		);
-		$schema_tool->createSchema( $classes );
-		flush_rewrite_rules();
+		$schema_tool->updateSchema( $classes, true );
 	}
 
+	/**
+	 * Create roles.
+	 *
+	 * @return void
+	 */
 	protected function create_roles() {
+		global $wp_roles;
+
+		if ( ! class_exists( WP_Roles::class ) ) {
+			return;
+		}
+
+		if ( ! isset( $wp_roles ) ) {
+			$wp_roles = new WP_Roles(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		}
+
 		add_role(
 			'hrhub_employee',
 			'HRHub Employee',
@@ -96,5 +84,52 @@ class Activate {
 				'read' => true,
 			)
 		);
+
+		add_role(
+			'hrhub_manager',
+			'HRHub manager',
+			[
+				'read' => true,
+			]
+		);
+
+		$capabilities = $this->get_core_capabilities();
+
+		foreach ( $capabilities as $cap_group ) {
+			foreach ( $cap_group as $cap ) {
+				$wp_roles->add_cap( 'hrhub_manager', $cap );
+				$wp_roles->add_cap( 'administrator', $cap );
+			}
+		}
+	}
+
+	/**
+	 * Get core capabilities.
+	 *
+	 * @return array
+	 */
+	public function get_core_capabilities() {
+		$capabilities = [];
+
+		$capabilities['core'] = array(
+			'manage_hrhub',
+			'view_hrhub_reports',
+		);
+
+		$cap_types = [ 'employee', 'department', 'position', 'leave', 'review' ];
+
+		foreach ( $cap_types as $cap_type ) {
+			$capabilities[ $cap_type ] = [
+				"create_{$cap_type}",
+				"edit_{$cap_type}",
+				"read_{$cap_type}",
+				"delete_{$cap_type}",
+				"edit_{$cap_type}s",
+				"edit_others_{$cap_type}s",
+				"delete_{$cap_type}s",
+				"delete_others_{$cap_type}s",
+			];
+		}
+		return $capabilities;
 	}
 }
