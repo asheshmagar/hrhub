@@ -100,7 +100,7 @@ trait Hook {
 			return;
 		}
 
-		$handle = "hrhub/$handle";
+		$handle = "hrhub:$handle";
 
 		do_action_ref_array( $handle, array_merge( [], $args ) );
 	}
@@ -118,7 +118,7 @@ trait Hook {
 			return false;
 		}
 
-		$action = "hrhub/$handle";
+		$action = "hrhub:$handle";
 
 		return apply_filters_ref_array( $action, array_merge( [], $args ) );
 	}
