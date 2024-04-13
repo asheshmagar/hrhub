@@ -4,10 +4,10 @@
  */
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../configs/constants.php';
+require __DIR__ . '/../config/constants.php';
 
 global $hrhub;
 
-$hrhub = require __DIR__ . '/../configs/container.php';
+$hrhub = require __DIR__ . '/../config/container.php';
 
 return $hrhub;
