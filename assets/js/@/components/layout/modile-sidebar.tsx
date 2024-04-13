@@ -1,18 +1,19 @@
 'use client';
 import { MenuIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { UserContext } from '../../../dashboard/context/UserContext';
 import { navItems } from '../constants';
 import { DashboardNav } from '../dashboard-nav';
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 
-// import { Playlist } from "../data/playlists";
-
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-	// playlists: Playlist[];
-}
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function MobileSidebar({ className }: SidebarProps) {
 	const [open, setOpen] = useState(false);
+	const user = useContext(UserContext);
+	const menuItems = navItems.filter((item) =>
+		item.roles.some((r) => user?.data?.roles.includes(r)),
+	);
 	return (
 		<>
 			<Sheet open={open} onOpenChange={setOpen}>
@@ -26,7 +27,7 @@ export function MobileSidebar({ className }: SidebarProps) {
 								Overview
 							</h2>
 							<div className="space-y-1">
-								<DashboardNav items={navItems} setOpen={setOpen} />
+								<DashboardNav items={menuItems} setOpen={setOpen} />
 							</div>
 						</div>
 					</div>
