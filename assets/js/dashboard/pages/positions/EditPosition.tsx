@@ -13,7 +13,7 @@ import { Form } from './components/Form';
 export const EditPosition = () => {
 	const { toast } = useToast();
 	const { positionId } = useParams();
-	const form = useForm<PositionSchema>();
+	const form = useForm<PositionSchema & { id?: number }>();
 	const positionApi = new Api('hrhub/v1/positions');
 	const { data, isLoading } = useQuery({
 		queryKey: ['position', `position:${positionId}`],
