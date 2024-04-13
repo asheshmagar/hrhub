@@ -4,12 +4,16 @@ namespace HRHub\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use HRHub\Entity\Employee;
 use HRHub\Traits\Hook;
 
 abstract class AbstractService {
 
 	use Hook;
+
+	protected $entity = '';
 
 	/**
 	 * Constructor.
@@ -18,6 +22,9 @@ abstract class AbstractService {
 	 */
 	public function __construct( public EntityManagerInterface $em ) {
 		$this->em = $em;
+		if ( empty( $this->entity ) ) {
+			_doing_it_wrong( __CLASS__, 'Entity prop cannot be empty', '0.1.0' );
+		}
 	}
 
 	/**
@@ -70,12 +77,32 @@ abstract class AbstractService {
 	 * @param array $data
 	 * @return object|\WP_Error
 	 */
-	public function update( $entity, array $data ) {
+	public function update( $entity, array $data = [] ) {
 		try {
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
 			$this->action( 'hrhub:entity:updated', $entity, $data );
+		} catch ( ORMException $e ) {
+			return new \WP_Error( 'entity_update_error', $e->getMessage() );
+		}
+		return $entity;
+	}
+
+	/**
+	 * Create or update entity.
+	 *
+	 * @param object $entity
+	 * @param array $data
+	 * @return object|\WP_Error
+	 */
+	public function create_or_update( $entity, $data = [] ) {
+		try {
+			$hook   = ! $entity->get_id() ? 'hrhub:entity:created' : 'hrhub:entity:updated';
+			$entity = $this->hydrate_entity( $entity, $data );
+			$this->em->persist( $entity );
+			$this->em->flush();
+			$this->action( $hook, $entity, $data );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_update_error', $e->getMessage() );
 		}
@@ -90,9 +117,9 @@ abstract class AbstractService {
 	 */
 	public function delete( $entity ) {
 		try {
-			$entity = is_object( $entity ) ? $entity : $this->em->find( $this->get_entity_class_name(), $entity );
+			$entity = is_object( $entity ) ? $entity : $this->em->find( $this->entity, $entity );
 			if ( ! $entity ) {
-				throw new ORMException( sprintf( 'Entity %s not found', $this->get_entity_class_name() ) );
+				throw new ORMException( sprintf( 'Entity %s not found', $this->entity ) );
 			}
 			$this->em->remove( $entity );
 			$this->em->flush();
@@ -104,16 +131,47 @@ abstract class AbstractService {
 	}
 
 	/**
-	 * List entity.
+	 * List entities with pagination.
 	 *
+	 * @param null|array $query_args
 	 * @return array
 	 */
-	abstract public function list( ?array $args = [] ): array;
+	public function list( ?array $query_args = [] ): array {
+		$defaults      = [
+			'search'   => null,
+			'page'     => 1,
+			'per_page' => 10,
+		];
+		$query_args    = wp_parse_args( $query_args, $defaults );
+		$query_builder = $this->create_query_builder();
+
+		if ( $query_args['search'] ) {
+			$query_builder->where( 'd.name LIKE :search' )
+				->setParameter( 'search', '%' . $query_args['search'] . '%' );
+		}
+
+		$limit = absint( $query_args['per_page'] ?? 10 );
+		$page  = absint( $query_args['page'] ?? 1 );
+
+		$paginator   = new Paginator( $query_builder );
+		$total       = count( $paginator );
+		$departments = $paginator->getQuery()
+						->setFirstResult( $limit * ( $page - 1 ) )
+						->setMaxResults( $limit )
+						->getResult();
+
+		return [
+			'entities' => $departments,
+			'total'    => $total,
+			'current'  => $query_args['page'],
+			'pages'    => ceil( $total / $limit ),
+		];
+	}
 
 	/**
-	 * Get entity class name.
+	 * Create query builder.
 	 *
-	 * @return string
+	 * @return QueryBuilder
 	 */
-	abstract public function get_entity_class_name(): string;
+	abstract protected function create_query_builder(): QueryBuilder;
 }
