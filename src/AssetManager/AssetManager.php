@@ -226,4 +226,17 @@ class AssetManager {
 			self::enqueue( $style );
 		}
 	}
+
+	public static function enqueue_all_styles() {
+		$styles = array_filter(
+			self::$styles,
+			function ( $style ) {
+				return Location::ALL === $style->get_location();
+			}
+		);
+
+		foreach ( $styles as $style ) {
+			self::enqueue( $style );
+		}
+	}
 }
