@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { CircleAlertIcon, Plus } from 'lucide-react';
 import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BreadCrumb from '../../../@/components/breadcrumbs';
@@ -12,6 +12,13 @@ import { cn } from '../../../@/lib/utils';
 import { EmployeesSchema } from '../../types/types';
 import { columns } from './components/columns';
 
+import { TableSkeleton } from '../../../@/components/skeleton/table';
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+} from '../../../@/components/ui/alert';
+
 export const Employees = () => {
 	const api = new Api('hrhub/v1/employees');
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -19,7 +26,11 @@ export const Employees = () => {
 	const employeesQuery = useQuery({
 		queryKey: ['employees'],
 		queryFn: () =>
-			api.list<EmployeesSchema>({
+			api.list<{
+				data: any[];
+				total: number;
+				pages: number;
+			}>({
 				per_page: searchParams.get('limit') ?? undefined,
 				page: searchParams.get('page') ?? undefined,
 				search: searchParams.get('search') ?? undefined,
@@ -50,12 +61,14 @@ export const Employees = () => {
 		});
 	};
 
+	console.log(employeesQuery);
+
 	return (
 		<div className="flex-1 space-y-4  p-4 md:p-8 pt-6">
 			<BreadCrumb items={[{ title: 'Employees', link: '/employees' }]} />
 			<div className="flex items-start justify-between">
 				<Heading
-					title={`Employees (${employeesQuery?.data?.total ?? 0})`}
+					title={`Employees (${employeesQuery.data?.total ?? 0})`}
 					description="Manage employees"
 				/>
 
@@ -68,12 +81,24 @@ export const Employees = () => {
 			</div>
 			<Separator />
 			{employeesQuery.isLoading ? (
-				<p>Loading...</p>
+				<TableSkeleton
+					rows={5}
+					columns={['NAME', 'DEPARTMENT', 'POSITION', 'PHONE', 'STATUS']}
+				/>
+			) : employeesQuery.isError ? (
+				<Alert variant="destructive">
+					<CircleAlertIcon className="h-4 w-4" />
+					<AlertTitle>Failed to fetch data!</AlertTitle>
+					<AlertDescription>
+						Message:{' '}
+						{employeesQuery.error?.message ?? 'An unknown error occurred.'}
+					</AlertDescription>
+				</Alert>
 			) : (
 				<ListTable
 					columns={columns}
 					data={
-						employeesQuery.data?.employees.map((e) => ({
+						employeesQuery.data?.data?.map((e) => ({
 							id: e.id,
 							name: e.name,
 							department: e.department?.name ?? '(Unassigned)',

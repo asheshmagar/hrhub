@@ -4,6 +4,7 @@ import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import BreadCrumb from '../../../@/components/breadcrumbs';
 import { ListTable } from '../../../@/components/list-table';
+import { TableSkeleton } from '../../../@/components/skeleton/table';
 import { buttonVariants } from '../../../@/components/ui/button';
 import { Heading } from '../../../@/components/ui/heading';
 import { Separator } from '../../../@/components/ui/separator';
@@ -15,7 +16,7 @@ import { columns } from './components/columns';
 
 type Department = {
 	current: number;
-	departments: Array<DepartmentSchema & { id: number }>;
+	data: Array<DepartmentSchema & { id: number }>;
 	pages: number;
 	total: number;
 };
@@ -76,12 +77,12 @@ export const Departments = () => {
 			</div>
 			<Separator />
 			{departmentsQuery.isLoading ? (
-				<p>Loading...</p>
+				<TableSkeleton rows={5} columns={['NAME', 'DESCRIPTION']} />
 			) : (
 				<ListTable
 					columns={columns}
 					data={
-						departmentsQuery.data?.departments.map((e) => ({
+						departmentsQuery.data?.data.map((e) => ({
 							id: e.id,
 							name: e.name,
 							description: e.description ?? '(No description)',

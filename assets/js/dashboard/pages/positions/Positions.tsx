@@ -14,7 +14,7 @@ import { columns } from './components/columns';
 
 type Position = {
 	current: number;
-	positions: Array<PositionSchema & { id: number }>;
+	data: Array<PositionSchema & { id: number }>;
 	pages: number;
 	total: number;
 };
@@ -80,7 +80,7 @@ export const Positions = () => {
 				<ListTable
 					columns={columns}
 					data={
-						positionsQuery.data?.positions.map((e) => ({
+						positionsQuery.data?.data.map((e) => ({
 							id: e.id,
 							name: e.name,
 							description: e.description ?? '(No description)',
