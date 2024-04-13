@@ -14,8 +14,12 @@ import { Textarea } from '../../../../@/components/ui/textarea';
 import { PositionSchema } from '../../../types/schema';
 
 type Props = {
-	form: UseFormReturn<PositionSchema>;
-	onSubmit: (data: PositionSchema) => void;
+	form: UseFormReturn<PositionSchema & { id?: number }>;
+	onSubmit: (
+		data: PositionSchema & {
+			id?: number;
+		},
+	) => void;
 	isLoading?: boolean;
 	submitBtnText: string;
 };
@@ -56,6 +60,7 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 						</FormItem>
 					)}
 				/>
+				<input {...form.register('id')} hidden />
 				<Button
 					type="submit"
 					onClick={form.handleSubmit(onSubmit)}
