@@ -109,7 +109,7 @@ class EmployeesController extends AbstractEntitiesController {
 					[ 'status' => 400 ]
 				);
 			}
-			$employee->set_position( $position );
+			$employee->set_department( $department );
 		}
 
 		$employment_type = $request['employment_type'] ?? 'full-time';
