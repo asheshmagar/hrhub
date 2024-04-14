@@ -25,13 +25,13 @@ class EmployeeService extends AbstractService {
 	 */
 	protected function create_query_builder(): QueryBuilder {
 		$query_builder = $this->em->createQueryBuilder()
-							->select( 'e', 'd', 'p', 'l', 'r', 'a' )
-							->from( $this->entity, 'e' )
-							->leftJoin( 'e.department', 'd' )
-							->leftJoin( 'e.position', 'p' )
-							->leftJoin( 'e.leaves', 'l' )
-							->leftJoin( 'e.reviews', 'r' )
-							->leftJoin( 'e.attendances', 'a' );
+							->select( 'da', 'd', 'p', 'l', 'r', 'a' )
+							->from( $this->entity, 'da' )
+							->leftJoin( 'da.department', 'd' )
+							->leftJoin( 'da.position', 'p' )
+							->leftJoin( 'da.leaves', 'l' )
+							->leftJoin( 'da.reviews', 'r' )
+							->leftJoin( 'da.attendances', 'a' );
 		return $query_builder;
 	}
 }

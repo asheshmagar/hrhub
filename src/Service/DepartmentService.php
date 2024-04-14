@@ -26,9 +26,9 @@ class DepartmentService extends AbstractService {
 	 */
 	protected function create_query_builder(): QueryBuilder {
 		$query_builder = $this->em->createQueryBuilder()
-						->select( 'd', 'e' )
-						->from( $this->entity, 'd' )
-						->leftJoin( 'd.employees', 'e' );
+						->select( 'da', 'e' )
+						->from( $this->entity, 'da' )
+						->leftJoin( 'da.employees', 'e' );
 		return $query_builder;
 	}
 }

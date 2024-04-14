@@ -146,7 +146,7 @@ abstract class AbstractService {
 		$query_builder = $this->create_query_builder();
 
 		if ( $query_args['search'] ) {
-			$query_builder->where( 'd.name LIKE :search' )
+			$query_builder->where( 'da.name LIKE :search' )
 				->setParameter( 'search', '%' . $query_args['search'] . '%' );
 		}
 

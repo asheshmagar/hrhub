@@ -26,8 +26,8 @@ class ReviewService extends AbstractService {
 	 */
 	protected function create_query_builder(): QueryBuilder {
 		$query_builder = $this->em->createQueryBuilder()
-						->select( 'r' )
-						->from( $this->entity, 'r' );
+						->select( 'da' )
+						->from( $this->entity, 'da' );
 		return $query_builder;
 	}
 }

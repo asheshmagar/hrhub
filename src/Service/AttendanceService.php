@@ -25,8 +25,8 @@ class AttendanceService extends AbstractService {
 	 */
 	protected function create_query_builder(): QueryBuilder {
 		$query_builder = $this->em->createQueryBuilder()
-						->select( 'a', )
-						->from( $this->entity, 'a' );
+						->select( 'da', )
+						->from( $this->entity, 'da' );
 		return $query_builder;
 	}
 }

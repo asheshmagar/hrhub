@@ -26,8 +26,8 @@ class LeaveService extends AbstractService {
 	 */
 	protected function create_query_builder(): QueryBuilder {
 		$query_builder = $this->em->createQueryBuilder()
-							->select( 'l' )
-							->from( $this->entity, 'l' );
+							->select( 'da' )
+							->from( $this->entity, 'da' );
 		return $query_builder;
 	}
 }
