@@ -94,6 +94,10 @@
   },
   "scripts": {
     "dev": "wp-scripts start --node-env=development --mode=development --hot",
-    "build": "wp-scripts build --node-env=production --mode=production"
+    "build": "wp-scripts build --node-env=production --mode=production",
+    "lint": "eslint ./src --ext ts,tsx",
+    "prettier": "prettier --ignore-path .gitignore --check \"**/*.+(ts|tsx)\"",
+    "format": "prettier --ignore-path .gitignore --write \"**/*.+(ts|tsx)\"",
+    "prettier:fix": "prettier --write \"**/*.+(ts|tsx)\""
   }
 }
