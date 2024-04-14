@@ -43,6 +43,10 @@ export const columns: ColumnDef<any>[] = [
 		},
 	},
 	{
+		accessorKey: 'employees',
+		header: 'EMPLOYEES',
+	},
+	{
 		id: 'actions',
 		cell: ({ row }) => <span>:</span>,
 	},

@@ -14,7 +14,7 @@ import { columns } from './components/columns';
 
 type Position = {
 	current: number;
-	data: Array<PositionSchema & { id: number }>;
+	data: Array<PositionSchema & { id: number; employees: any[] }>;
 	pages: number;
 	total: number;
 };
@@ -84,6 +84,7 @@ export const Positions = () => {
 							id: e.id,
 							name: e.name,
 							description: e.description ?? '(No description)',
+							employees: e.employees?.length ?? 0,
 						})) ?? []
 					}
 					pages={positionsQuery.data?.pages ?? -1}

@@ -16,7 +16,7 @@ import { columns } from './components/columns';
 
 type Department = {
 	current: number;
-	data: Array<DepartmentSchema & { id: number }>;
+	data: Array<DepartmentSchema & { id: number; employees: Array<any> }>;
 	pages: number;
 	total: number;
 };
@@ -86,6 +86,7 @@ export const Departments = () => {
 							id: e.id,
 							name: e.name,
 							description: e.description ?? '(No description)',
+							employees: e?.employees?.length ?? 0,
 						})) ?? []
 					}
 					pages={departmentsQuery.data?.pages ?? -1}
