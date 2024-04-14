@@ -9,19 +9,10 @@ export function trailingslashit(url: string) {
 	return url.endsWith('/') ? url : url + '/';
 }
 
-export const file2blob = (file: File) => {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.readAsArrayBuffer(file);
-		reader.onload = () => resolve(reader.result);
-		reader.onerror = (error) => reject(error);
-	});
-};
-
-export const files2formData = (files: File[]) => {
-	const formData = new FormData();
-	for (let i = 0; i < files.length; i++) {
-		formData.append(`documents.${i}`, files[i]);
-	}
-	return formData;
+export const debounce = (fn: (...args: any[]) => void, ms: number = 400) => {
+	let timeoutId: ReturnType<typeof setTimeout>;
+	return function (this: any, ...args: any[]) {
+		clearTimeout(timeoutId);
+		timeoutId = setTimeout(() => fn.apply(this, args), ms);
+	};
 };
