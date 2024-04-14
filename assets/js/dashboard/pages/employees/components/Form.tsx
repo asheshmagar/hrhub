@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { MediaUpload } from '@wordpress/media-utils';
 import { format } from 'date-fns';
 import { CalendarIcon, Eye, FileIcon, Image, Plus, X } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import { FormProvider, UseFormReturn } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import { DocumentPreview } from '../../../../@/components/document-preview';
 import { Button } from '../../../../@/components/ui/button';
 import { Calendar } from '../../../../@/components/ui/calendar';
 import {
@@ -22,7 +24,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '../../../../@/components/ui/popover';
-import { ReactSelect } from '../../../../@/components/ui/react-select';
+import { ReactAsyncSelect } from '../../../../@/components/ui/react-select';
 import {
 	Select,
 	SelectContent,
@@ -31,7 +33,7 @@ import {
 	SelectValue,
 } from '../../../../@/components/ui/select';
 import { Api } from '../../../../@/lib/api';
-import { cn } from '../../../../@/lib/utils';
+import { cn, debounce } from '../../../../@/lib/utils';
 import {
 	AttachmentSchema,
 	DepartmentSchema,
@@ -54,33 +56,37 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 		queryKey: ['departments'],
 		queryFn: () =>
 			departmentApi.list<{
-				departments: Array<
+				data: Array<
 					DepartmentSchema & {
 						id: number;
 						employees: Array<any>;
 					}
 				>;
-			}>({ per_page: 99 }),
+			}>({ per_page: 10 }),
 	});
 	const positionsQuery = useQuery({
 		queryKey: ['positions'],
 		queryFn: () =>
 			positionApi.list<{
-				positions: Array<
+				data: Array<
 					PositionSchema & {
 						id: number;
 						employees: Array<any>;
 					}
 				>;
-			}>({ per_page: 99 }),
+			}>({ per_page: 10 }),
 	});
+	const [preview, setPreview] = useState<{
+		url: string;
+		type: string;
+	} | null>(null);
 
-	const departmentOptions = departmentsQuery.data?.departments.map((d) => ({
+	const departmentOptions = departmentsQuery.data?.data.map((d) => ({
 		value: d.id,
 		label: d.name,
 	}));
 
-	const positionOptions = positionsQuery.data?.positions.map((d) => ({
+	const positionOptions = positionsQuery.data?.data.map((d) => ({
 		value: d.id,
 		label: d.name,
 	}));
@@ -301,15 +307,48 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 							<FormItem>
 								<FormLabel>Department</FormLabel>
 								<FormControl>
-									<ReactSelect
-										createAble={false}
-										options={departmentOptions ?? []}
+									<ReactAsyncSelect
+										isClearable
+										onChange={(v: any) => {
+											field.onChange(v.value);
+										}}
+										defaultOptions={
+											departmentsQuery.isSuccess
+												? departmentsQuery.data.data.map((d) => ({
+														label: d.name,
+														value: d.id,
+													}))
+												: []
+										}
+										placeholder={'Select department'}
 										value={departmentOptions?.find(
 											(d) => d.value === field.value,
 										)}
+										loadOptions={debounce((searchValue, callback) => {
+											if (searchValue.length < 0) {
+												return callback([]);
+											}
+											departmentApi
+												.list<{
+													data: Array<
+														DepartmentSchema & {
+															id: number;
+															employees: Array<any>;
+														}
+													>;
+												}>({ search: searchValue })
+												.then((data) => {
+													callback(
+														data?.data?.map((d) => {
+															return {
+																value: d.id,
+																label: d.name,
+															};
+														}),
+													);
+												});
+										})}
 										isLoading={departmentsQuery.isLoading}
-										placeholder="Select department"
-										onChange={(v) => field.onChange(v?.value ?? undefined)}
 									/>
 								</FormControl>
 								{form.formState.errors.department && (
@@ -327,20 +366,53 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 							<FormItem>
 								<FormLabel>Position</FormLabel>
 								<FormControl>
-									<ReactSelect
-										createAble={false}
-										options={positionOptions ?? []}
+									<ReactAsyncSelect
+										isClearable
+										onChange={(v: any) => {
+											field.onChange(v.value);
+										}}
+										defaultOptions={
+											positionsQuery.isSuccess
+												? positionsQuery.data.data.map((d) => ({
+														label: d.name,
+														value: d.id,
+													}))
+												: []
+										}
+										placeholder={'Select position'}
 										value={positionOptions?.find(
 											(d) => d.value === field.value,
 										)}
+										loadOptions={debounce((searchValue, callback) => {
+											if (searchValue.length < 0) {
+												return callback([]);
+											}
+											positionApi
+												.list<{
+													data: Array<
+														PositionSchema & {
+															id: number;
+															employees: Array<any>;
+														}
+													>;
+												}>({ search: searchValue })
+												.then((data) => {
+													callback(
+														data?.data?.map((d) => {
+															return {
+																value: d.id,
+																label: d.name,
+															};
+														}),
+													);
+												});
+										})}
 										isLoading={positionsQuery.isLoading}
-										placeholder="Select position"
-										onChange={(v) => field.onChange(v?.value ?? undefined)}
 									/>
 								</FormControl>
-								{form.formState.errors.department && (
+								{form.formState.errors.position && (
 									<FormMessage>
-										{form.formState.errors.department.message}
+										{form.formState.errors.position.message}
 									</FormMessage>
 								)}
 							</FormItem>
@@ -455,16 +527,27 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 																		{file.title + ` (${file.filename})`}
 																	</span>
 																	<Button asChild variant="link">
-																		<a
-																			href={file.url}
-																			target="_blank"
-																			rel="noopener noreferrer"
+																		<Link
+																			to={`/documents/preview/${file.id}`}
+																		></Link>
+																		<Button
+																			variant="link"
+																			onClick={() => {
+																				setPreview({
+																					url: file.url,
+																					type:
+																						file.mime === 'application/pdf'
+																							? 'pdf'
+																							: 'image',
+																				});
+																			}}
+																			className="p-0"
 																		>
 																			<Eye className="h-4 w-4" />
 																			<span className="sr-only">
 																				Preview document {file.title}
 																			</span>
-																		</a>
+																		</Button>
 																	</Button>
 																</div>
 																<Button
@@ -497,6 +580,7 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 						/>
 					</div>
 				</div>
+				<Input type="hidden" {...form.register('id')} />
 				<Button
 					type="submit"
 					onClick={form.handleSubmit(onSubmit)}
@@ -506,6 +590,12 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 					{submitBtnText}
 				</Button>
 			</ReactForm>
+			<DocumentPreview
+				preview={preview}
+				onClose={() => {
+					setPreview(null);
+				}}
+			/>
 			<DevTool control={form.control} />
 		</FormProvider>
 	);
