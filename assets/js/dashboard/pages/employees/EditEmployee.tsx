@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import BreadCrumb from '../../../@/components/breadcrumbs';
@@ -18,23 +18,46 @@ export const EditEmployee = () => {
 		queryFn: () => employeeApi.get(parseInt(employeeId as string)),
 	});
 	const { toast } = useToast();
+	const [loading, setLoading] = useState(false);
 
-	const form = useForm<EmployeeSchema>();
+	const form = useForm<EmployeeSchema>({
+		defaultValues: async () => {
+			setLoading(true);
+			const res = await employeeApi.get<
+				EmployeeSchema & {
+					department: any;
+					position: any;
+				}
+			>(parseInt(employeeId as string));
+			console.log(res);
 
-	useEffect(() => {
-		if (data && !form.formState.isDirty) {
-			form.reset({
-				...data,
-				// @ts-expect-error
-				department: data?.department?.id
-					? // @ts-expect-error
-						Number(data.department.id)
-					: undefined,
-				// @ts-expect-error
-				position: data?.position?.id ? Number(data.position.id) : undefined,
+			return new Promise((resolve) => {
+				resolve({
+					...res,
+					position: res.position?.id,
+					department: res.department?.id,
+				});
+				setLoading(false);
 			});
-		}
-	}, [data]); // eslint-disable-line
+		},
+	});
+
+	console.log(form);
+
+	// useEffect(() => {
+	// 	if (data && !form.formState.isDirty) {
+	// 		form.reset({
+	// 			...data,
+	// 			// @ts-expect-error
+	// 			department: data?.department?.id
+	// 				? // @ts-expect-error
+	// 					Number(data.department.id)
+	// 				: undefined,
+	// 			// @ts-expect-error
+	// 			position: data?.position?.id ? Number(data.position.id) : undefined,
+	// 		});
+	// 	}
+	// }, [data]); // eslint-disable-line
 
 	const api = new Api('hrhub/v1/employees');
 	const queryClient = useQueryClient();
