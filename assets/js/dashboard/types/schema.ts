@@ -75,6 +75,7 @@ export const attachmentSchema = z.object({
 export type AttachmentSchema = z.infer<typeof attachmentSchema>;
 
 export const employeeSchema = z.object({
+	id: z.number().optional(),
 	name: z.string().min(1, 'Name is required').max(255),
 	email: z.string().min(1, 'Email is required').email('Email is not valid'),
 	phone_number: z
