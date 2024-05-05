@@ -194,6 +194,9 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 											onSelect={field.onChange}
 											disabled={(date) => date > new Date()}
 											initialFocus
+											captionLayout="dropdown-buttons"
+											fromYear={1990}
+											toYear={new Date().getFullYear()}
 										/>
 									</PopoverContent>
 								</Popover>
@@ -238,8 +241,10 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 											mode="single"
 											selected={field.value ? new Date(field.value) : undefined}
 											onSelect={field.onChange}
-											disabled={(date) => date > new Date()}
 											initialFocus
+											captionLayout="dropdown-buttons"
+											fromYear={1800}
+											toYear={new Date().getFullYear() + 10}
 										/>
 									</PopoverContent>
 								</Popover>
