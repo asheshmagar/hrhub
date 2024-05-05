@@ -12,7 +12,7 @@ import { UserContextProvider } from './context/UserContext';
 import { Router } from './router/Router';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-	'pdfjs-dist/build/pdf.worker.min.js',
+	'pdfjs-dist/build/pdf.worker.min.mjs',
 	import.meta.url,
 ).toString();
 
