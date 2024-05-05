@@ -76,13 +76,6 @@ class Admin {
 	 * @return void
 	 */
 	public function load_hrhub_dashboard() {
-		wp_localize_script(
-			'hrhub-dashboard',
-			'__HRHUB__',
-			[
-				'userId' => get_current_user_id(),
-			]
-		);
 		wp_enqueue_media();
 		$am = hrhub( AssetManager::class );
 		$am::enqueue_backend_scripts();
