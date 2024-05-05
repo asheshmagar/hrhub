@@ -24,6 +24,7 @@ use Doctrine\Common\EventManager;
 use HRHub\Service\EmployeeService;
 use HRHub\Service\PositionService;
 use HRHub\AssetManager\AssetManager;
+use HRHub\Controller\V1\AnalyticsController;
 use HRHub\Service\AttendanceService;
 use HRHub\Service\DepartmentService;
 use JMS\Serializer\SerializerBuilder;
@@ -105,13 +106,15 @@ return [
 	LeavesController::class      => create( LeavesController::class )->constructor( get( LeaveService::class ) ),
 	PositionsController::class   => create( PositionsController::class )->constructor( get( PositionService::class ), get( Serializer::class ) ),
 	ReviewsController::class     => create( ReviewsController::class )->constructor( get( ReviewService::class ) ),
+	AnalyticsController::class   => create( AnalyticsController::class )->constructor( get( EntityManager::class ), get( Serializer::class ) ),
 	RESTApi::class               => create( RESTApi::class )->constructor(
 		get( EmployeesController::class ),
 		get( AttendancesController::class ),
 		get( DepartmentsController::class ),
 		get( LeavesController::class ),
 		get( PositionsController::class ),
-		get( ReviewsController::class )
+		get( ReviewsController::class ),
+		get( AnalyticsController::class )
 	),
 	EmailHooks::class            => create( EmailHooks::class ),
 ];
