@@ -1,16 +1,18 @@
+import { format, setMonth } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, useDayPicker, useNavigation } from 'react-day-picker';
 
 import { cn } from '../../lib/utils';
 import { buttonVariants } from './button';
+import { Select, SelectContent, SelectItem, SelectTrigger } from './select';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({
 	className,
 	classNames,
-	showOutsideDays = true,
+	showOutsideDays = false,
 	...props
 }: CalendarProps) {
 	return (
@@ -21,7 +23,7 @@ function Calendar({
 				months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
 				month: 'space-y-4',
 				caption: 'flex justify-center pt-1 relative items-center',
-				caption_label: 'text-sm font-medium',
+				caption_label: 'text-sm font-medium hidden',
 				nav: 'space-x-1 flex items-center',
 				nav_button: cn(
 					buttonVariants({ variant: 'outline' }),
@@ -49,11 +51,65 @@ function Calendar({
 				day_range_middle:
 					'aria-selected:bg-accent aria-selected:text-accent-foreground',
 				day_hidden: 'invisible',
+				caption_dropdowns: 'flex gap-1',
 				...classNames,
 			}}
 			components={{
 				IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
 				IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+				Dropdown: ({ ...props }) => {
+					const { fromDate, fromMonth, fromYear, toDate, toMonth, toYear } =
+						useDayPicker();
+					const { goToMonth, currentMonth } = useNavigation();
+					if (!['months', 'years'].includes(props.name ?? '')) return null;
+					let selectItems: Array<{ label: string; value: string }> = [];
+					if ('months' === props.name) {
+						selectItems = Array.from({ length: 12 }, (_, i) => ({
+							value: i.toString(),
+							label: format(setMonth(new Date(), i), 'MMM'),
+						}));
+					} else {
+						const earlierYear =
+							fromYear || fromMonth?.getFullYear() || fromDate?.getFullYear();
+						const latestYear =
+							toYear || toMonth?.getFullYear() || toDate?.getFullYear();
+						if (earlierYear && latestYear) {
+							const yearsLength = latestYear - earlierYear + 1;
+							selectItems = Array.from({ length: yearsLength }, (_, i) => ({
+								value: (earlierYear + i).toString(),
+								label: (earlierYear + i).toString(),
+							}));
+						}
+					}
+
+					return (
+						<Select
+							onValueChange={(v) => {
+								const nextDate = new Date(currentMonth);
+								if (props.name === 'years') {
+									nextDate.setFullYear(parseInt(v));
+								} else {
+									nextDate.setMonth(parseInt(v));
+								}
+								goToMonth(nextDate);
+							}}
+							value={props.value?.toString()}
+						>
+							<SelectTrigger>
+								{props.name === 'years'
+									? currentMonth.getFullYear()
+									: format(currentMonth, 'MMM')}
+							</SelectTrigger>
+							<SelectContent>
+								{selectItems.map((i) => (
+									<SelectItem key={i.value} value={i.value}>
+										{i.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					);
+				},
 			}}
 			{...props}
 		/>
