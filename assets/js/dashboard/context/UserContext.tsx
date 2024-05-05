@@ -1,20 +1,23 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import apiFetch from '@wordpress/api-fetch';
 import React, { createContext } from 'react';
-import { Api } from '../../@/lib/api';
+import { NoPermission } from '../pages/403';
 import { User } from './types';
-
-declare var __HRHUB__: {
-	userId?: string;
-};
 
 const UserContext = createContext<UseQueryResult<User, Error> | null>(null);
 
 const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
-	const userApi = new Api('wp/v2/users');
 	const userQuery = useQuery({
 		queryKey: ['user'],
 		queryFn: () =>
-			userApi.get<User>(parseInt(__HRHUB__?.userId ?? '0'), 'edit'),
+			apiFetch<User>({
+				path: 'wp/v2/users/me?context=edit',
+				method: 'GET',
+			}),
+		refetchInterval: 60000,
+		refetchOnMount: true,
+		refetchOnReconnect: true,
+		refetchIntervalInBackground: true,
 	});
 	return (
 		<UserContext.Provider value={userQuery}>
@@ -34,7 +37,6 @@ const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
 								fillRule="evenodd"
 							/>
 						</svg>
-
 						<div>Loading ...</div>
 					</div>
 				</div>
@@ -43,7 +45,7 @@ const UserContextProvider = ({ children }: { children: React.ReactNode }) => {
 			  ) ? (
 				children
 			) : (
-				<div>No Permission</div>
+				<NoPermission />
 			)}
 		</UserContext.Provider>
 	);
