@@ -7,9 +7,6 @@ use HRHub\Entity\Department;
 use HRHub\Entity\Employee;
 use HRHub\Entity\Position;
 use HRHub\Entity\WPUser;
-use HRHub\Service\EmployeeService;
-use HRHub\Traits\Hook;
-use JMS\Serializer\Serializer;
 
 class EmployeesController extends AbstractEntitiesController {
 
@@ -136,7 +133,7 @@ class EmployeesController extends AbstractEntitiesController {
 
 		$employee->set_wp_user_id( $user );
 
-		return $this->filter( 'hrhub:rest:employees:pre-insert', $employee, $request );
+		return $this->filter( 'rest:employees:pre-insert', $employee, $request );
 	}
 
 	/**
@@ -227,6 +224,6 @@ class EmployeesController extends AbstractEntitiesController {
 
 		$response->add_links( $this->prepare_links( $employee ) );
 
-		return $this->filter( 'hrhub:rest:prepare:employee', $response, $employee, $request );
+		return $this->filter( 'rest:prepare:employee', $response, $employee, $request );
 	}
 }

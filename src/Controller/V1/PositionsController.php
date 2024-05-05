@@ -50,7 +50,7 @@ class PositionsController extends AbstractEntitiesController {
 
 		$response->add_links( $this->prepare_links( $position ) );
 
-		return $this->filter( 'hrhub:rest:prepare:position', $response, $position, $request );
+		return $this->filter( 'rest:prepare:position', $response, $position, $request );
 	}
 
 	/**
@@ -84,7 +84,7 @@ class PositionsController extends AbstractEntitiesController {
 			$position->set_description( sanitize_textarea_field( wp_unslash( $request['description'] ) ) );
 		}
 
-		return $this->filter( 'hrhub:rest:position:pre-insert', $position, $request );
+		return $this->filter( 'rest:position:pre-insert', $position, $request );
 	}
 
 	/**

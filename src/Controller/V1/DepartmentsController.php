@@ -45,7 +45,7 @@ class DepartmentsController extends AbstractEntitiesController {
 
 		$response->add_links( $this->prepare_links( $department ) );
 
-		return $this->filter( 'hrhub:rest:prepare:department', $response, $department, $request );
+		return $this->filter( 'rest:prepare:department', $response, $department, $request );
 	}
 
 	/**
@@ -79,7 +79,7 @@ class DepartmentsController extends AbstractEntitiesController {
 			$position->set_description( sanitize_textarea_field( wp_unslash( $request['description'] ) ) );
 		}
 
-		return $this->filter( 'hrhub:rest:department:pre-insert', $position, $request );
+		return $this->filter( 'rest:department:pre-insert', $position, $request );
 	}
 
 	/**
