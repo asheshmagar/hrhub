@@ -2,11 +2,11 @@
 
 namespace HRHub\Service;
 
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
-use HRHub\Entity\Employee;
 use HRHub\Traits\Hook;
 
 abstract class AbstractService {
@@ -41,7 +41,7 @@ abstract class AbstractService {
 				$entity->$method( $value );
 			}
 		}
-		return $this->filter( 'hrhub:hydrated:entity', $entity, $data );
+		return $this->filter( 'hydrated:entity', $entity, $data );
 	}
 
 	/**
@@ -63,7 +63,7 @@ abstract class AbstractService {
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
-			$this->action( 'hrhub:entity:created', $entity, $data );
+			$this->action( 'entity:created', $entity, $data );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_create_error', $e->getMessage() );
 		}
@@ -82,7 +82,7 @@ abstract class AbstractService {
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
-			$this->action( 'hrhub:entity:updated', $entity, $data );
+			$this->action( 'entity:updated', $entity, $data );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_update_error', $e->getMessage() );
 		}
@@ -98,7 +98,7 @@ abstract class AbstractService {
 	 */
 	public function create_or_update( $entity, $data = [] ) {
 		try {
-			$hook   = ! $entity->get_id() ? 'hrhub:entity:created' : 'hrhub:entity:updated';
+			$hook   = ! $entity->get_id() ? 'entity:created' : 'entity:updated';
 			$entity = $this->hydrate_entity( $entity, $data );
 			$this->em->persist( $entity );
 			$this->em->flush();
@@ -123,7 +123,7 @@ abstract class AbstractService {
 			}
 			$this->em->remove( $entity );
 			$this->em->flush();
-			$this->action( 'hrhub:entity:deleted', $entity );
+			$this->action( 'entity:deleted', $entity );
 		} catch ( ORMException $e ) {
 			return new \WP_Error( 'entity_delete_error', $e->getMessage() );
 		}
@@ -136,7 +136,7 @@ abstract class AbstractService {
 	 * @param null|array $query_args
 	 * @return array
 	 */
-	public function list( ?array $query_args = [] ): array {
+	public function list( ?array $query_args = [], $hydration_mode = AbstractQuery::HYDRATE_OBJECT ): array {
 		$defaults      = [
 			'search'   => null,
 			'page'     => 1,
@@ -158,7 +158,7 @@ abstract class AbstractService {
 		$departments = $paginator->getQuery()
 						->setFirstResult( $limit * ( $page - 1 ) )
 						->setMaxResults( $limit )
-						->getResult();
+						->getResult( $hydration_mode );
 
 		return [
 			'entities' => $departments,
