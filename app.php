@@ -31,5 +31,5 @@ function hrhub( $class_name ) {
 	return $hrhub->get( $class_name );
 }
 
-// Run.
+// Init app.
 hrhub( App::class )->init();
