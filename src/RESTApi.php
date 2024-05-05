@@ -4,6 +4,7 @@
  */
 namespace HRHub;
 
+use HRHub\Controller\V1\AnalyticsController;
 use HRHub\Controller\V1\LeavesController;
 use HRHub\Controller\V1\ReviewsController;
 use HRHub\Controller\V1\EmployeesController;
@@ -36,6 +37,7 @@ class RESTApi {
 		private LeavesController $leaves_controller,
 		private PositionsController $positions_controller,
 		private ReviewsController $reviews_controller,
+		private AnalyticsController $analytics_controller
 	) {}
 
 	/**
@@ -68,6 +70,7 @@ class RESTApi {
 		$this->leaves_controller->register_routes();
 		$this->positions_controller->register_routes();
 		$this->reviews_controller->register_routes();
+		$this->analytics_controller->register_routes();
 
 		$this->action( 'rest:routes:registered', $this );
 	}
