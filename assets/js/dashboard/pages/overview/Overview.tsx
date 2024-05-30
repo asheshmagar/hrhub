@@ -10,7 +10,7 @@ import {
 } from '../../../@/components/ui/card';
 import { Skeleton } from '../../../@/components/ui/skeleton';
 import { Api } from '../../../@/lib/api';
-import { EmployeeSalaryOverview } from './components/EmployeeSalaryOverview';
+import { DepartmentsOverview } from './components/DepartmentsOverview';
 
 export const Overview = () => {
 	const salariedEmployeeApi = new Api('hrhub/v1/analytics/employees/salary');
@@ -43,6 +43,8 @@ export const Overview = () => {
 			...(Object.values((queries[0].data as any).data) as Array<any>),
 		).length;
 	}
+
+	console.log(queries[2]);
 
 	return (
 		<div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -144,13 +146,11 @@ export const Overview = () => {
 						{isLoading ? (
 							<Skeleton className="h-[32px] w-[14px] border-none" />
 						) : (
-							<EmployeeSalaryOverview
-								data={Object.entries((queries[0].data as any)?.data)?.map(
-									([range, data]) => ({
-										name: range,
-										employees: (data as Array<any>).length,
-									}),
-								)}
+							<DepartmentsOverview
+								data={(queries[2].data as any).data?.map((d: any) => ({
+									name: d.name,
+									employees: (d.employees as Array<any>).length,
+								}))}
 							/>
 						)}
 					</CardContent>
