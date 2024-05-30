@@ -17,7 +17,7 @@
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "@wordpress/api-fetch": "^6.51.0",
-    "@wordpress/i18n": "^4.55.0",
+    "@wordpress/i18n": "^4.57.0",
     "@wordpress/media-utils": "^4.46.0",
     "@wordpress/scripts": "^27.5.0",
     "autoprefixer": "^10.4.19",
