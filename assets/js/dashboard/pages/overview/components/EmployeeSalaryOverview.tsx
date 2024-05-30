@@ -1,14 +1,14 @@
-import React from 'react';
 import {
-	Bar,
-	BarChart,
-	CartesianGrid,
+	BarElement,
+	CategoryScale,
+	Chart as ChartJS,
 	Legend,
-	Rectangle,
+	LinearScale,
+	Title,
 	Tooltip,
-	XAxis,
-	YAxis,
-} from 'recharts';
+} from 'chart.js';
+import React from 'react';
+import { Bar } from 'react-chartjs-2';
 
 type Props = {
 	data: Array<{
@@ -17,31 +17,46 @@ type Props = {
 	}>;
 };
 
+ChartJS.register(
+	CategoryScale,
+	LinearScale,
+	BarElement,
+	Title,
+	Tooltip,
+	Legend,
+);
+
 export const EmployeeSalaryOverview = (props: Props) => {
+	console.log(props);
+	const labels = props.data.map((item) => item.name);
+	const data = {
+		labels,
+		datasets: [
+			{
+				label: 'Employees',
+				data: props.data.map((item) => item.employees),
+				backgroundColor: 'rgba(255, 99, 132, 0.5)',
+			},
+		],
+	};
+
 	return (
 		<div className="[&>div]:!w-full">
-			<BarChart
-				width={500}
-				height={300}
-				data={props.data}
-				margin={{
-					top: 5,
-					right: 30,
-					left: 20,
-					bottom: 5,
+			<Bar
+				options={{
+					responsive: true,
+					plugins: {
+						legend: {
+							position: 'top' as const,
+						},
+						title: {
+							display: true,
+							text: 'Chart.js Bar Chart',
+						},
+					},
 				}}
-			>
-				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis dataKey="name" />
-				<YAxis />
-				<Tooltip />
-				<Legend />
-				<Bar
-					dataKey="employees"
-					fill="#8884d8"
-					activeBar={<Rectangle fill="pink" stroke="blue" />}
-				/>
-			</BarChart>
+				data={data}
+			/>
 		</div>
 	);
 };
