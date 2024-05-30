@@ -1,3 +1,4 @@
+import { __ } from '@wordpress/i18n';
 import React from 'react';
 import { FormProvider, UseFormReturn } from 'react-hook-form';
 import { Button } from '../../../../@/components/ui/button';
@@ -33,7 +34,7 @@ export const Form = ({ form, onSubmit, isLoading, submitBtnText }: Props) => {
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Name</FormLabel>
+							<FormLabel>{__('Name', 'hrhub')}</FormLabel>
 							<FormControl>
 								<Input placeholder="Enter name" {...field} />
 							</FormControl>

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { sprintf, __ } from '@wordpress/i18n';
 import { Plus } from 'lucide-react';
 import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -59,18 +60,24 @@ export const Positions = () => {
 
 	return (
 		<div className="flex-1 space-y-4  p-4 md:p-8 pt-6">
-			<BreadCrumb items={[{ title: 'Positions', link: '/positions' }]} />
+			<BreadCrumb
+				items={[{ title: __('Positions', 'hrhub'), link: '/positions' }]}
+			/>
 			<div className="flex items-start justify-between">
 				<Heading
-					title={`Positions (${positionsQuery?.data?.total ?? 0})`}
-					description="Manage positions"
+					title={sprintf(
+						/* Translators: %s: Total number of positions */
+						__(`Positions (%d)`, 'hrhub'),
+						positionsQuery?.data?.total ?? 0,
+					)}
+					description={__('Manage positions', 'hrhub')}
 				/>
 
 				<Link
 					to={'/positions/new'}
 					className={cn(buttonVariants({ variant: 'default' }))}
 				>
-					<Plus className="mr-2 h-4 w-4" /> Add New
+					<Plus className="mr-2 h-4 w-4" /> {__('Add New', 'hrhub')}
 				</Link>
 			</div>
 			<Separator />
@@ -83,7 +90,7 @@ export const Positions = () => {
 						positionsQuery.data?.data.map((e) => ({
 							id: e.id,
 							name: e.name,
-							description: e.description ?? '(No description)',
+							description: e.description ?? __('(No description)', 'hrhub'),
 							employees: e.employees?.length ?? 0,
 						})) ?? []
 					}

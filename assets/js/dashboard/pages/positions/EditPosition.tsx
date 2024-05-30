@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { sprintf, __ } from '@wordpress/i18n';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -56,12 +57,15 @@ export const EditPosition = () => {
 		<div className="flex-1 space-y-4 p-8">
 			<BreadCrumb
 				items={[
-					{ title: 'Positions', link: '/positions' },
-					{ title: 'Create', link: '/positions/new' },
+					{ title: __('Positions', 'hrhub'), link: '/positions' },
+					{ title: __('Create', 'hrhub'), link: '/positions/new' },
 				]}
 			/>
 			<div className="flex items-center justify-between">
-				<Heading title={'Create position'} description={'Add a new position'} />
+				<Heading
+					title={'Edit position'}
+					description={sprintf(__(`Edit position #%d`, 'hrhub'), positionId)}
+				/>
 			</div>
 			<Separator />
 			{isLoading ? (

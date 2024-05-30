@@ -1,5 +1,6 @@
 'use client';
 import { ColumnDef } from '@tanstack/react-table';
+import { __ } from '@wordpress/i18n';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Checkbox } from '../../../../@/components/ui/checkbox';
@@ -11,14 +12,14 @@ export const columns: ColumnDef<any>[] = [
 			<Checkbox
 				checked={table.getIsAllPageRowsSelected()}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-				aria-label="Select all"
+				aria-label={__('Select all', 'hrhub')}
 			/>
 		),
 		cell: ({ row }) => (
 			<Checkbox
 				checked={row.getIsSelected()}
 				onCheckedChange={(value) => row.toggleSelected(!!value)}
-				aria-label="Select row"
+				aria-label={__('Select row', 'hrhub')}
 			/>
 		),
 		enableSorting: false,

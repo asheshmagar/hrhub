@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { __ } from '@wordpress/i18n';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -43,15 +44,22 @@ export const NewPosition = () => {
 		<div className="flex-1 space-y-4 p-8">
 			<BreadCrumb
 				items={[
-					{ title: 'Positions', link: '/positions' },
-					{ title: 'Create', link: '/positions/new' },
+					{ title: __('Positions', 'hrhub'), link: '/positions' },
+					{ title: __('Create', 'hrhub'), link: '/positions/new' },
 				]}
 			/>
 			<div className="flex items-center justify-between">
-				<Heading title={'Create position'} description={'Add a new position'} />
+				<Heading
+					title={'Create position'}
+					description={__('Add a new position', 'hrhub')}
+				/>
 			</div>
 			<Separator />
-			<Form form={form} onSubmit={onSubmit} submitBtnText="Create" />
+			<Form
+				form={form}
+				onSubmit={onSubmit}
+				submitBtnText={__('Create', 'hrhub')}
+			/>
 		</div>
 	);
 };
