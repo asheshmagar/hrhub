@@ -29,7 +29,6 @@ export const EditEmployee = () => {
 					position: any;
 				}
 			>(parseInt(employeeId as string));
-			console.log(res);
 
 			return new Promise((resolve) => {
 				resolve({
@@ -41,8 +40,6 @@ export const EditEmployee = () => {
 			});
 		},
 	});
-
-	console.log(form);
 
 	// useEffect(() => {
 	// 	if (data && !form.formState.isDirty) {

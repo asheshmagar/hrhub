@@ -27,8 +27,6 @@ ChartJS.register(
 );
 
 export const DepartmentsOverview = (props: Props) => {
-	console.log(props);
-
 	return (
 		<Bar
 			options={{

@@ -27,7 +27,6 @@ ChartJS.register(
 );
 
 export const EmployeeSalaryOverview = (props: Props) => {
-	console.log(props);
 	const labels = props.data.map((item) => item.name);
 	const data = {
 		labels,
